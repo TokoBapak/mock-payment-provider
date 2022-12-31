@@ -1,0 +1,29 @@
+name: Master
+
+on:
+  push:
+    branches:
+      - master
+
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    container: golang:1
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install SQLite
+        run: apt-get update && apt-get upgrade -y && apt-get install -y tar gzip sqlite3 build-essential
+
+      - name: Build test
+        run: go build .
+
+      - name: Run test
+        run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Codecov
+        uses: codecov/codecov-action@v3
