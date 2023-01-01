@@ -11,3 +11,8 @@ var ErrMismatchedTransactionAmount = errors.New("mismatched transaction amount")
 
 // ErrTransactionNotFound should be returned when a transaction was not found
 var ErrTransactionNotFound = errors.New("transaction not found")
+
+// ErrCannotModifyStatus should be returned for cases that overstep the status flow.
+// For example, if the current status is settled, we can't request the status to be changed to
+// canceled, and vice versa.
+var ErrCannotModifyStatus = errors.New("cannot modify status")

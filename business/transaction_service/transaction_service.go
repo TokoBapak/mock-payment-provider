@@ -3,22 +3,33 @@ package transaction_service
 import (
 	"fmt"
 
-	"mock-payment-provider/repository/transaction"
-	"mock-payment-provider/repository/webhook"
+	"mock-payment-provider/repository"
 )
 
 type Dependency struct {
-	TransactionRepository transaction.ITransactionRepository
-	WebhookClient         *webhook.Client
+	TransactionRepository    repository.TransactionRepository
+	WebhookClient            repository.WebhookClient
+	VirtualAccountRepository repository.VirtualAccountRepository
+	EMoneyRepository         repository.EMoneyRepository
 }
 
+// NewTransactionService validates input from Dependency and return an error if
+// any of it is nil. It implements business.Transaction interface.
 func NewTransactionService(dependency Dependency) (*Dependency, error) {
 	if dependency.TransactionRepository == nil {
 		return &Dependency{}, fmt.Errorf("nil transaction repository")
 	}
 
 	if dependency.WebhookClient == nil {
-		return &Dependency{}, fmt.Errorf("webhook client is nil")
+		return &Dependency{}, fmt.Errorf("nil webhook client")
+	}
+
+	if dependency.VirtualAccountRepository == nil {
+		return &Dependency{}, fmt.Errorf("nil virtual account repository")
+	}
+
+	if dependency.EMoneyRepository == nil {
+		return &Dependency{}, fmt.Errorf("nil emoney repository")
 	}
 
 	return &Dependency{
