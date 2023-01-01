@@ -17,10 +17,18 @@ func (p PaymentType) String() string {
 	switch p {
 	case PaymentTypeVirtualAccountBCA:
 		return "VIRTUAL_ACCOUNT_BCA"
-	// TODO: lanjutin switch case nya
+	case PaymentTypeVirtualAccountMandiri:
+		return "VIRTUAL_ACCOUNT_MANDIRI"
+	case PaymentTypeVirtualAccountBRI:
+		return "VIRTUAL_ACCOUNT_BRI"
+	case PaymentTypeVirtualAccountBNI:
+		return "VIRTUAL_ACCOUNT_BNI"
 	case PaymentTypeEMoneyQRIS:
-		return "EMONEY_QRIS"
-		// TODO: lanjutin switch case nya
+		return "E_MONEY_QRIS"
+	case PaymentTypeEMoneyGopay:
+		return "E_MONEY_GOPAY"
+	case PaymentTypeEMoneyShopeePay:
+		return "E_MONEY_SHOPEE_PAY"
 	case PaymentTypeUnspecified:
 		fallthrough
 	default:
