@@ -32,10 +32,10 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 
 	// Convert to common business schema
 	chargeRequest := business.ChargeRequest{
-		PaymentType:         PaymentTypeMap[requestBody.PaymentType],
+		PaymentType:         paymentTypeMap[requestBody.PaymentType],
 		OrderId:             requestBody.Transaction.OrderId,
 		TransactionAmount:   requestBody.Transaction.Amount,
-		TransactionCurrency: CurrencyMap[requestBody.Transaction.Currency],
+		TransactionCurrency: currencyMap[requestBody.Transaction.Currency],
 
 		Customer: business.CustomerInformation{
 			FirstName:   requestBody.Customer.FirstName,
