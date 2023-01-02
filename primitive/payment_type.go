@@ -35,13 +35,3 @@ func (p PaymentType) String() string {
 		return "UNSPECIFIED"
 	}
 }
-
-var PaymentTypeMap = map[string]PaymentType{
-	"VIRTUAL_ACCOUNT_BCA":     PaymentTypeVirtualAccountBCA,
-	"VIRTUAL_ACCOUNT_MANDIRI": PaymentTypeVirtualAccountMandiri,
-	"VIRTUAL_ACCOUNT_BRI":     PaymentTypeVirtualAccountBRI,
-	"VIRTUAL_ACCOUNT_BNI":     PaymentTypeVirtualAccountBNI,
-	"E_MONEY_QRIS":            PaymentTypeEMoneyQRIS,
-	"E_MONEY_GOPAY":           PaymentTypeEMoneyGopay,
-	"E_MONEY_SHOPEE_PAY":      PaymentTypeEMoneyShopeePay,
-}

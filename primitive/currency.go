@@ -20,8 +20,3 @@ func (c Currency) String() string {
 		return "UNSPECIFIED"
 	}
 }
-
-var CurrencyMap = map[string]Currency{
-	"IDR": CurrencyIDR,
-	"USD": CurrencyUSD,
-}

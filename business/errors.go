@@ -11,3 +11,12 @@ var ErrMismatchedTransactionAmount = errors.New("mismatched transaction amount")
 
 // ErrTransactionNotFound should be returned when a transaction was not found
 var ErrTransactionNotFound = errors.New("transaction not found")
+
+// RequestValidationError should be returned when a request validation error occured
+type RequestValidationError struct {
+	Err error
+}
+
+func (r RequestValidationError) Error() string {
+	return r.Err.Error()
+}
