@@ -22,7 +22,7 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 
 func ValidateChageRequest(request business.ChargeRequest) *business.RequestValidationError {
 	// validate payment_type
-	if request.PaymentType == 0 {
+	if request.PaymentType == primitive.PaymentTypeUnspecified {
 		return &business.RequestValidationError{
 			Err: errors.New("payment_type is not valid"),
 		}
