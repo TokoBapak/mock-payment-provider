@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 
 	"mock-payment-provider/business"
 	"mock-payment-provider/primitive"
@@ -42,7 +43,7 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 	}
 
 	// validate transaction.currency
-	if request.TransactionCurrency == 0 {
+	if request.TransactionCurrency == primitive.CurrencyUnspecified {
 		return &business.RequestValidationError{
 			Reason: "transaction.currency is not valid",
 		}
@@ -80,7 +81,13 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.EmailPattern).Match([]byte(request.Customer.Email)); !ok {
+	if ok := regexp.MustCompile(primitive.EmailPattern).MatchString(request.Customer.Email); !ok {
+		return &business.RequestValidationError{
+			Reason: "customer.email is not valid",
+		}
+	}
+
+	if ok := regexp.MustCompile(primitive.EmailPattern).MatchString(request.Customer.Email); !ok {
 		return &business.RequestValidationError{
 			Reason: "customer.email is not valid",
 		}
@@ -99,7 +106,7 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.PhoneNumberPattern).Match([]byte(request.Customer.PhoneNumber)); !ok {
+	if ok := regexp.MustCompile(primitive.PhoneNumberPattern).MatchString(request.Customer.PhoneNumber); !ok {
 		return &business.RequestValidationError{
 			Reason: "customer.phone_number is not valid",
 		}
@@ -138,8 +145,8 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.EmailPattern).Match(
-		[]byte(request.Customer.BillingAddress.Email),
+	if ok := regexp.MustCompile(primitive.EmailPattern).MatchString(
+		request.Customer.BillingAddress.Email,
 	); !ok {
 		return &business.RequestValidationError{
 			Reason: "customer.billing_address.email is not valid",
@@ -159,8 +166,8 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.PhoneNumberPattern).Match(
-		[]byte(request.Customer.BillingAddress.Phone),
+	if ok := regexp.MustCompile(primitive.PhoneNumberPattern).MatchString(
+		request.Customer.BillingAddress.Phone,
 	); !ok {
 		return &business.RequestValidationError{
 			Reason: "customer.billing_address.phone is not valid",
@@ -187,15 +194,13 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if len(request.Customer.BillingAddress.PostalCode) > 10 {
+	if len(request.Customer.BillingAddress.PostalCode) > 10 { // less than equal uint64 characters length
 		return &business.RequestValidationError{
 			Reason: "customer.billing_address.postal_code must be less than 10 characters",
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.PostalCodePattern).Match(
-		[]byte(request.Customer.BillingAddress.PostalCode),
-	); !ok {
+	if _, err := strconv.ParseUint(request.Customer.BillingAddress.PostalCode, 10, 64); err != nil {
 		return &business.RequestValidationError{
 			Reason: "customer.billing_address.postal_code is not valid",
 		}
@@ -208,15 +213,13 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if len(request.Customer.BillingAddress.CountryCode) > 5 {
+	if len(request.Customer.BillingAddress.CountryCode) > 5 { // less than equal uint32 characters length
 		return &business.RequestValidationError{
 			Reason: "customer.billing_address.country_code must be less than 5 characters",
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.CountryCodePattern).Match(
-		[]byte(request.Customer.BillingAddress.CountryCode),
-	); !ok {
+	if _, err := strconv.ParseUint(request.Customer.BillingAddress.CountryCode, 10, 32); err != nil {
 		return &business.RequestValidationError{
 			Reason: "customer.billing_address.country_code is not valid",
 		}
@@ -255,8 +258,8 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.EmailPattern).Match(
-		[]byte(request.Seller.Email),
+	if ok := regexp.MustCompile(primitive.EmailPattern).MatchString(
+		request.Seller.Email,
 	); !ok {
 		return &business.RequestValidationError{
 			Reason: "seller.email is not valid",
@@ -276,8 +279,8 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.PhoneNumberPattern).Match(
-		[]byte(request.Seller.PhoneNumber),
+	if ok := regexp.MustCompile(primitive.PhoneNumberPattern).MatchString(
+		request.Seller.PhoneNumber,
 	); !ok {
 		return &business.RequestValidationError{
 			Reason: "seller.phone_number is not valid",
