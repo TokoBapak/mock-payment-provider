@@ -108,7 +108,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// if kind of error is RequestValidationError
-      var requestValidationError *business.RequestValidationError
+		var requestValidationError *business.RequestValidationError
 		if errors.As(err, &requestValidationError) {
 			responseBody, err := json.Marshal(schema.Error{
 				StatusCode:    400,
