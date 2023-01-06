@@ -8,11 +8,6 @@ import (
 )
 
 func TestValidateChargeRequest(t *testing.T) {
-	type test struct {
-		param     business.ChargeRequest
-		expectErr *business.RequestValidationError
-	}
-
 	// provide correct value
 	request := business.ChargeRequest{
 		PaymentType:         1,
