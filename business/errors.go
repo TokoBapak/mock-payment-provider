@@ -14,9 +14,9 @@ var ErrTransactionNotFound = errors.New("transaction not found")
 
 // RequestValidationError should be returned when a request validation error occured
 type RequestValidationError struct {
-	Err error
+	Reason string
 }
 
 func (r RequestValidationError) Error() string {
-	return r.Err.Error()
+	return r.Reason
 }
