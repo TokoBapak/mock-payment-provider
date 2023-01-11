@@ -87,11 +87,6 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.EmailPattern).MatchString(request.Customer.Email); !ok {
-		return &business.RequestValidationError{
-			Reason: "customer.email is not valid",
-		}
-	}
 
 	// validate customer.phone_number
 	if request.Customer.PhoneNumber == "" {
