@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"mock-payment-provider/business"
+	"mock-payment-provider/primitive"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -44,4 +45,19 @@ func NewPresenter(config PresenterConfig) (*http.Server, error) {
 	}
 
 	return server, nil
+}
+
+var paymentTypeMap = map[string]primitive.PaymentType{
+	"VIRTUAL_ACCOUNT_BCA":     primitive.PaymentTypeVirtualAccountBCA,
+	"VIRTUAL_ACCOUNT_MANDIRI": primitive.PaymentTypeVirtualAccountMandiri,
+	"VIRTUAL_ACCOUNT_BRI":     primitive.PaymentTypeVirtualAccountBRI,
+	"VIRTUAL_ACCOUNT_BNI":     primitive.PaymentTypeVirtualAccountBNI,
+	"E_MONEY_QRIS":            primitive.PaymentTypeEMoneyQRIS,
+	"E_MONEY_GOPAY":           primitive.PaymentTypeEMoneyGopay,
+	"E_MONEY_SHOPEE_PAY":      primitive.PaymentTypeEMoneyShopeePay,
+}
+
+var currencyMap = map[string]primitive.Currency{
+	"IDR": primitive.CurrencyIDR,
+	"USD": primitive.CurrencyUSD,
 }
