@@ -3,6 +3,7 @@ package presentation
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -110,11 +111,25 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		// if kind of error is RequestValidationError
 		var requestValidationError *business.RequestValidationError
 		if errors.As(err, &requestValidationError) {
-			responseBody, err := json.Marshal(schema.Error{
-				StatusCode:    400,
-				StatusMessage: err.Error(),
-			})
+			// make the specific struct for request validation error
+			validationError := schema.ValidationError{
+				Error: schema.Error{
+					StatusCode:    400,
+					StatusMessage: "some request validation is failed",
+				},
+			}
+			if err, ok := err.(*business.RequestValidationError); ok {
+				for _, val := range err.Issues {
+					validationError.Issues = append(validationError.Issues, schema.ValidationIssue{
+						Field:   val.Field,
+						Code:    val.Code.String(),
+						Message: fmt.Sprintf("%s %s", val.Field, val.Message),
+					})
+				}
 
+			}
+
+			responseBody, err := json.Marshal(validationError)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return

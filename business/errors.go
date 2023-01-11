@@ -32,6 +32,23 @@ const (
 	RequestValidationCodeInvalidValue    RequestValidationCode = "invalid_value"
 )
 
+func (r RequestValidationCode) String() string {
+	switch r {
+	case RequestValidationCodeRequired:
+		return "field_requried"
+	case RequestValidationCodeTooShort:
+		return "too_short"
+	case RequestValidationCodeTooLong:
+		return "too_long"
+	case RequestValidationCodeProhibitedValue:
+		return "prohibited_value"
+	case RequestValidationCodeInvalidValue:
+		return "invalid_value"
+	default:
+		return ""
+	}
+}
+
 // RequestValidationIssue contains a specific validation issue for each field and rules.
 // It should be embedded as array inside the RequestValidationError struct.
 type RequestValidationIssue struct {
