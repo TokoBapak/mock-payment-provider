@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -138,341 +137,449 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 }
 
 func ValidateChageRequest(request business.ChargeRequest) *business.RequestValidationError {
+	var issues []business.RequestValidationIssue
+
 	// validate payment_type
 	if request.PaymentType == primitive.PaymentTypeUnspecified {
-		return &business.RequestValidationError{
-			Reason: "payment_type is not valid",
-		}
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeInvalidValue,
+			Field:   "payment_type",
+			Message: "must be valid value",
+		})
 	}
 
 	// validate transaction.order_id
 	if request.OrderId == "" {
-		return &business.RequestValidationError{
-			Reason: "order_id is required",
-		}
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "order_id",
+			Message: "can not be empty",
+		})
 	}
 
 	// valdiate transaction.amount
 	if request.TransactionAmount <= 0 {
-		return &business.RequestValidationError{
-			Reason: "amount should be greater than 0",
-		}
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeInvalidValue,
+			Field:   "amount",
+			Message: "must be greater than 0",
+		})
 	}
 
 	// validate transaction.currency
 	if request.TransactionCurrency == primitive.CurrencyUnspecified {
-		return &business.RequestValidationError{
-			Reason: "transaction.currency is not valid",
-		}
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeInvalidValue,
+			Field:   "currency",
+			Message: "must be valid value",
+		})
 	}
 
 	// validate customer.first_name
 	if request.Customer.FirstName == "" {
-		return &business.RequestValidationError{
-			Reason: "customer.first_name is required",
-		}
-	}
-	if len(request.Customer.FirstName) > 255 {
-		return &business.RequestValidationError{
-			Reason: "customer.first_name must be less than 255 characters",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "customer.first_name",
+			Message: "can not be empty",
+		})
+	} else {
+		if len(request.Customer.FirstName) > 255 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "customer.first_name",
+				Message: "maximum of 255 characters length",
+			})
 		}
 	}
 
 	// validate customer.last_name
 	if len(request.Customer.LastName) > 255 {
-		return &business.RequestValidationError{
-			Reason: "customer.last_name must be less than 255 characters",
-		}
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeTooLong,
+			Field:   "customer.last_name",
+			Message: "maximum of 255 characters length",
+		})
 	}
 
 	// validate customer.email
 	if request.Customer.Email == "" {
-		return &business.RequestValidationError{
-			Reason: "customer.email is required",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "customer.email",
+			Message: "can not be empty",
+		})
+	} else {
+		if ok := primitive.EmailPattern.MatchString(request.Customer.Email); !ok {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "customer.email",
+				Message: "must be valid email",
+			})
+		}
+
+		if len(request.Customer.Email) > 255 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "customer.email",
+				Message: "maximum of 255 characters length",
+			})
 		}
 	}
-
-	if len(request.Customer.Email) > 255 {
-		return &business.RequestValidationError{
-			Reason: "customer.email must be less than 255 characters",
-		}
-	}
-
-	if ok := regexp.MustCompile(primitive.EmailPattern).MatchString(request.Customer.Email); !ok {
-		return &business.RequestValidationError{
-			Reason: "customer.email is not valid",
-		}
-	}
-
 
 	// validate customer.phone_number
 	if request.Customer.PhoneNumber == "" {
-		return &business.RequestValidationError{
-			Reason: "customer.phone_number is required",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "customer.phone_number",
+			Message: "can not be empty",
+		})
+	} else {
+		if ok := primitive.PhoneNumberPattern.MatchString(request.Customer.PhoneNumber); !ok {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "customer.phone_number",
+				Message: "must be valid phone_number",
+			})
 		}
-	}
 
-	if len(request.Customer.PhoneNumber) > 255 {
-		return &business.RequestValidationError{
-			Reason: "customer.phone_number must less than 255 characters",
-		}
-	}
-
-	if ok := regexp.MustCompile(primitive.PhoneNumberPattern).MatchString(request.Customer.PhoneNumber); !ok {
-		return &business.RequestValidationError{
-			Reason: "customer.phone_number is not valid",
+		if len(request.Customer.PhoneNumber) > 255 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "customer.email",
+				Message: "maximum of 255 characters length",
+			})
 		}
 	}
 
 	// validate customer.billing_address.first_name
 	if request.Customer.BillingAddress.FirstName == "" {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.first_name is required",
-		}
-	}
-
-	if len(request.Customer.BillingAddress.FirstName) > 255 {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.first_name must be less than 255 characters",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "customer.billing_address.first_name",
+			Message: "can not be empty",
+		})
+	} else {
+		if len(request.Customer.BillingAddress.FirstName) > 255 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "customer.billing_address.first_name",
+				Message: "maximum of 255 characters length",
+			})
 		}
 	}
 
 	// validate customer.billing_address.last_name
 	if len(request.Customer.BillingAddress.LastName) > 255 {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.last_name must be less than 255 characters",
-		}
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeTooLong,
+			Field:   "customer.billing_address.last_name",
+			Message: "maximum of 255 characters length",
+		})
 	}
 
 	// validate customer.billing_address.email
 	if request.Customer.BillingAddress.Email == "" {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.email is required",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "customer.phone_number",
+			Message: "can not be empty",
+		})
+	} else {
+		if ok := primitive.EmailPattern.MatchString(
+			request.Customer.BillingAddress.Email,
+		); !ok {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "customer.billing_address.email",
+				Message: "must be a valid email",
+			})
 		}
-	}
 
-	if len(request.Customer.BillingAddress.Email) > 255 {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.email must be less than 255 characters",
-		}
-	}
-
-	if ok := regexp.MustCompile(primitive.EmailPattern).MatchString(
-		request.Customer.BillingAddress.Email,
-	); !ok {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.email is not valid",
+		if len(request.Customer.BillingAddress.Email) > 255 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "customer.billing_address.email",
+				Message: "maximum of 255 characters length",
+			})
 		}
 	}
 
 	// validate customer.billing_address.phone
 	if request.Customer.BillingAddress.Phone == "" {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.phone is required",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "customer.billing_address.phone",
+			Message: "can not be empty",
+		})
+	} else {
+		if ok := primitive.PhoneNumberPattern.MatchString(
+			request.Customer.BillingAddress.Phone,
+		); !ok {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "customer.billing_address.phone",
+				Message: "must be a valid phone number",
+			})
 		}
-	}
 
-	if len(request.Customer.BillingAddress.Phone) > 255 {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.phone must be less than 255 characters",
-		}
-	}
-
-	if ok := regexp.MustCompile(primitive.PhoneNumberPattern).MatchString(
-		request.Customer.BillingAddress.Phone,
-	); !ok {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.phone is not valid",
+		if len(request.Customer.BillingAddress.Phone) > 255 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "customer.billing_address.phone",
+				Message: "maximum of 255 characters length",
+			})
 		}
 	}
 
 	// validate customer.bliing_address.address
 	if request.Customer.BillingAddress.Address == "" {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.address is required",
-		}
-	}
-
-	if len(request.Customer.BillingAddress.Address) > 500 {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.address must be less than 500 characters",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "customer.billing_address.address",
+			Message: "can not be empty",
+		})
+	} else {
+		if len(request.Customer.BillingAddress.Address) > 500 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "customer.billing_address.address",
+				Message: "maximum of 500 characters length",
+			})
 		}
 	}
 
 	// validate customer.billing_address.postal_code
 	if request.Customer.BillingAddress.PostalCode == "" {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.postal_code is required",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "customer.billing_address.postal_code",
+			Message: "can not be empty",
+		})
+	} else {
+		if _, err := strconv.ParseUint(request.Customer.BillingAddress.PostalCode, 10, 64); err != nil {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "customer.billing_address.postal_code",
+				Message: "must be a valid postal code",
+			})
 		}
-	}
 
-	if len(request.Customer.BillingAddress.PostalCode) > 10 { // less than equal uint64 characters length
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.postal_code must be less than 10 characters",
-		}
-	}
-
-	if _, err := strconv.ParseUint(request.Customer.BillingAddress.PostalCode, 10, 64); err != nil {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.postal_code is not valid",
+		if len(request.Customer.BillingAddress.PostalCode) > 10 { // less than equal uint64 characters length
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "customer.billing_address.postal_code",
+				Message: "maximum of 10 characters length",
+			})
 		}
 	}
 
 	// validate customer.billing_address.country_code
 	if request.Customer.BillingAddress.CountryCode == "" {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.country_code is required",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "customer.billing_address.country_code",
+			Message: "can not be empty",
+		})
+	} else {
+		if _, err := strconv.ParseUint(request.Customer.BillingAddress.CountryCode, 10, 32); err != nil {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "customer.billing_address.country_code",
+				Message: "must be a valid country code",
+			})
 		}
-	}
 
-	if len(request.Customer.BillingAddress.CountryCode) > 5 { // less than equal uint32 characters length
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.country_code must be less than 5 characters",
-		}
-	}
-
-	if _, err := strconv.ParseUint(request.Customer.BillingAddress.CountryCode, 10, 32); err != nil {
-		return &business.RequestValidationError{
-			Reason: "customer.billing_address.country_code is not valid",
+		if len(request.Customer.BillingAddress.CountryCode) > 5 { // less than equal uint32 characters length
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "customer.billing_address.country_code",
+				Message: "maximum of 5 characters length",
+			})
 		}
 	}
 
 	// validate seller.first_name
 	if request.Seller.FirstName == "" {
-		return &business.RequestValidationError{
-			Reason: "seller.first_name is required",
-		}
-	}
-
-	if len(request.Seller.FirstName) > 255 {
-		return &business.RequestValidationError{
-			Reason: "seller.first_name must be less than 255 characters",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "seller.first_name",
+			Message: "can not be empty",
+		})
+	} else {
+		if len(request.Seller.FirstName) > 255 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "seller.first_name",
+				Message: "maximum of 255 characters length",
+			})
 		}
 	}
 
 	// validate seller.last_name
 	if len(request.Seller.LastName) > 255 {
-		return &business.RequestValidationError{
-			Reason: "seller.last_name must be less than 255 characters",
-		}
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeTooLong,
+			Field:   "seller.last_name",
+			Message: "maximum of 255 characters length",
+		})
 	}
 
 	// validate seller.email
 	if request.Seller.Email == "" {
-		return &business.RequestValidationError{
-			Reason: "seller.email is required",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "seller.email",
+			Message: "can not be empty",
+		})
+	} else {
+		if ok := primitive.EmailPattern.MatchString(
+			request.Seller.Email,
+		); !ok {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "seller.email",
+				Message: "must be a valid value",
+			})
 		}
-	}
 
-	if len(request.Seller.Email) > 255 {
-		return &business.RequestValidationError{
-			Reason: "seller.email must be less than 255 characters",
-		}
-	}
-
-	if ok := regexp.MustCompile(primitive.EmailPattern).MatchString(
-		request.Seller.Email,
-	); !ok {
-		return &business.RequestValidationError{
-			Reason: "seller.email is not valid",
+		if len(request.Seller.Email) > 255 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "seller.email",
+				Message: "maximum of 255 characters length",
+			})
 		}
 	}
 
 	// validate seller.phone_number
 	if request.Seller.PhoneNumber == "" {
-		return &business.RequestValidationError{
-			Reason: "seller.phone_number is required",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "seller.email",
+			Message: "can not be empty",
+		})
+	} else {
+		if ok := primitive.PhoneNumberPattern.MatchString(
+			request.Seller.PhoneNumber,
+		); !ok {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "seller.phone_number",
+				Message: "must be a valid value",
+			})
 		}
-	}
 
-	if len(request.Seller.PhoneNumber) > 255 {
-		return &business.RequestValidationError{
-			Reason: "seller.phone_number must less than 255 characters",
-		}
-	}
-
-	if ok := regexp.MustCompile(primitive.PhoneNumberPattern).MatchString(
-		request.Seller.PhoneNumber,
-	); !ok {
-		return &business.RequestValidationError{
-			Reason: "seller.phone_number is not valid",
+		if len(request.Seller.PhoneNumber) > 255 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "seller.phone_number",
+				Message: "maximum of 255 characters length",
+			})
 		}
 	}
 
 	// validate seller.address
 	if request.Seller.Address == "" {
-		return &business.RequestValidationError{
-			Reason: "seller.address is required",
-		}
-	}
-
-	if len(request.Seller.Address) > 500 {
-		return &business.RequestValidationError{
-			Reason: "seller.address must be less than 500 characters",
-		}
-	}
-
-	// validate items.id
-	if len(request.ProductItems) == 0 {
-		return &business.RequestValidationError{
-			Reason: "items.request_body must be greater than 0 length",
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "seller.address",
+			Message: "can not be empty",
+		})
+	} else {
+		if len(request.Seller.Address) > 500 {
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeTooLong,
+				Field:   "seller.address",
+				Message: "maximum of 500 characters length",
+			})
 		}
 	}
 
 	// validate items
-	for i, item := range request.ProductItems {
+	if len(request.ProductItems) == 0 {
+		issues = append(issues, business.RequestValidationIssue{
+			Code:    business.RequestValidationCodeRequired,
+			Field:   "items",
+			Message: "can not be empty",
+		})
+	}
+
+	// validate items
+	for _, item := range request.ProductItems {
 		// validate items.id
 		if item.ID == "" {
-			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.id is required", i),
-			}
-		}
-
-		if len(item.ID) > 255 {
-			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.id must be less than 255 characters", i),
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeRequired,
+				Field:   "items.id",
+				Message: "can not be empty",
+			})
+		} else {
+			if len(item.ID) > 255 {
+				issues = append(issues, business.RequestValidationIssue{
+					Code:    business.RequestValidationCodeTooLong,
+					Field:   "items.id",
+					Message: "maximum of 255 characters length",
+				})
 			}
 		}
 
 		// validate items.price
 		if item.Price <= 0 {
-			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.price must be greather than 0", i),
-			}
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "items.price",
+				Message: "must be greater than 0",
+			})
 		}
 
 		// validate itmes.quantity
 		if item.Quantity <= 0 {
-			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.quantity must be greater than 0", i),
-			}
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeInvalidValue,
+				Field:   "items.quantity",
+				Message: "must be greater than 0",
+			})
 		}
 
 		// validate items.name
 		if item.Name == "" {
-			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.name is required", i),
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeRequired,
+				Field:   "items.name",
+				Message: "can not be empty",
+			})
+		} else {
+			if len(item.Name) > 255 {
+				issues = append(issues, business.RequestValidationIssue{
+					Code:    business.RequestValidationCodeTooLong,
+					Field:   "items.name",
+					Message: "maximum of 255 characters length",
+				})
 			}
-		}
 
-		if len(item.Name) > 255 {
-			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.name must be less than 255 characters", i),
-			}
 		}
 
 		// validate items.category
 		if item.Category == "" {
-			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.category is required", i),
-			}
-		}
-
-		if len(item.Category) > 255 {
-			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.category must be less than 255 characters", i),
+			issues = append(issues, business.RequestValidationIssue{
+				Code:    business.RequestValidationCodeRequired,
+				Field:   "items.category",
+				Message: "can not be empty",
+			})
+		} else {
+			if len(item.Category) > 255 {
+				issues = append(issues, business.RequestValidationIssue{
+					Code:    business.RequestValidationCodeTooLong,
+					Field:   "items.category",
+					Message: "maximum of 255 characters length",
+				})
 			}
 		}
 	}
+
+	if len(issues) > 0 {
+		return &business.RequestValidationError{Issues: issues}
+	}
+
 	return nil
 }

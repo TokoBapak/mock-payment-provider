@@ -1,6 +1,9 @@
 package primitive
 
-const EmailPattern = `^\w+@\w+(\.\w+)+$`
-const PhoneNumberPattern = `^\+\d+$`
+import "regexp"
+
+var EmailPattern = regexp.MustCompile(`^\w+@\w+(\.\w+)+$`)
+var PhoneNumberPattern = regexp.MustCompile(`^\+\d+$`)
+
 const PostalCodePattern = `^\d{5,10}$`
 const CountryCodePattern = `^\d{0,5}$`
