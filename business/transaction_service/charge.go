@@ -334,7 +334,7 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		// validate items.name
 		if item.Name == "" {
 			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.quantity is required", i),
+				Reason: fmt.Sprintf("items.%d.name is required", i),
 			}
 		}
 
