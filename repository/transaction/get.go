@@ -1,8 +1,12 @@
 package transaction
 
-import "context"
+import (
+	"context"
 
-func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (Transaction, error) {
+	"mock-payment-provider/primitive"
+)
+
+func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (primitive.Transaction, error) {
 	// TODO implement me
 	panic("implement me")
 }

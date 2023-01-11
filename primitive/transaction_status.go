@@ -15,6 +15,8 @@ const (
 	TransactionStatusSettled
 	// TransactionStatusExpired tells that the transaction has exceeds the time limit that the user is allowed to pay.
 	TransactionStatusExpired
+	// TransactionStatusCanceled indicates that the transaction is canceled.
+	TransactionStatusCanceled
 )
 
 func (t TransactionStatus) String() string {
@@ -27,6 +29,8 @@ func (t TransactionStatus) String() string {
 		return "SETTLED"
 	case TransactionStatusExpired:
 		return "EXPIRED"
+	case TransactionStatusCanceled:
+		return "CANCELED"
 	case TransactionStatusUnspecified:
 		fallthrough
 	default:

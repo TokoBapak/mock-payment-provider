@@ -48,6 +48,41 @@ type SellerInformation struct {
 	Address     string
 }
 
+type VirtualAccountAction struct {
+	Bank                 string
+	VirtualAccountNumber string
+}
+
+type EMoneyActionType uint8
+
+const (
+	EMoneyActionTypeUnspecified EMoneyActionType = iota
+	EMoneyActionTypePay
+	EMoneyActionTypeStatus
+	EMoneyActionTypeCancel
+)
+
+func (e EMoneyActionType) String() string {
+	switch e {
+	case EMoneyActionTypePay:
+		return "CODE"
+	case EMoneyActionTypeStatus:
+		return "STATUS"
+	case EMoneyActionTypeCancel:
+		return "CANCEL"
+	case EMoneyActionTypeUnspecified:
+		fallthrough
+	default:
+		return "UNSPECIFIED"
+	}
+}
+
+type EMoneyAction struct {
+	EMoneyActionType EMoneyActionType
+	Method           string
+	URL              string
+}
+
 type ChargeRequest struct {
 	PaymentType         primitive.PaymentType
 	OrderId             string
@@ -59,11 +94,13 @@ type ChargeRequest struct {
 }
 
 type ChargeResponse struct {
-	OrderId           string
-	TransactionAmount int64
-	PaymentType       primitive.PaymentType
-	TransactionStatus primitive.TransactionStatus
-	TransactionTime   time.Time
+	OrderId              string
+	TransactionAmount    int64
+	PaymentType          primitive.PaymentType
+	TransactionStatus    primitive.TransactionStatus
+	TransactionTime      time.Time
+	EMoneyAction         []EMoneyAction
+	VirtualAccountAction VirtualAccountAction
 }
 
 type CancelResponse struct {
