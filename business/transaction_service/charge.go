@@ -13,6 +13,11 @@ import (
 )
 
 func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) (business.ChargeResponse, error) {
+	// Validate the request payload
+	if err := ValidateChageRequest(request); err != nil {
+		return business.ChargeResponse{}, err
+	}
+
 	// Validate the transaction amount and the amount of each product items
 	var totalAmount int64
 	for _, item := range request.ProductItems {
