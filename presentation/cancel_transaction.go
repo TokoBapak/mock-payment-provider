@@ -35,9 +35,8 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 	cancelResponse, err := p.transactionService.Cancel(r.Context(), orderId)
 	if err != nil {
 		if errors.Is(err, business.ErrTransactionNotFound) {
-			// TODO: handle error, return 404
 			responseBody, e := json.Marshal(schema.Error{
-				StatusCode:    http.StatusBadRequest,
+				StatusCode:    http.StatusNotFound,
 				StatusMessage: "transaction not found",
 			})
 
