@@ -204,11 +204,6 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	if ok := regexp.MustCompile(primitive.EmailPattern).MatchString(request.Customer.Email); !ok {
-		return &business.RequestValidationError{
-			Reason: "customer.email is not valid",
-		}
-	}
 
 	// validate customer.phone_number
 	if request.Customer.PhoneNumber == "" {
@@ -456,7 +451,7 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		// validate items.name
 		if item.Name == "" {
 			return &business.RequestValidationError{
-				Reason: fmt.Sprintf("items.%d.quantity is required", i),
+				Reason: fmt.Sprintf("items.%d.name is required", i),
 			}
 		}
 
