@@ -19,7 +19,10 @@ func (r *Repository) Migrate(ctx context.Context) error {
 		}
 	}()
 
-	tx, err := conn.BeginTx(ctx, &sql.TxOptions{})
+	tx, err := conn.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+		ReadOnly:  false,
+	})
 	if err != nil {
 		return fmt.Errorf("creating transaction: %w", err)
 	}
