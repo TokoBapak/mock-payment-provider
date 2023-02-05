@@ -35,10 +35,39 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 	cancelResponse, err := p.transactionService.Cancel(r.Context(), orderId)
 	if err != nil {
 		if errors.Is(err, business.ErrTransactionNotFound) {
-			// TODO: handle error, return 404
+			responseBody, e := json.Marshal(schema.Error{
+				StatusCode:    http.StatusNotFound,
+				StatusMessage: "transaction not found",
+			})
+
+			if e != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(responseBody)
+			w.Header().Set("Content-Type", "application/json")
+			return
 		}
 
-		// TODO: handle error, return 500
+		// TODO: send to logger
+
+		responseBody, e := json.Marshal(schema.Error{
+			StatusCode:    http.StatusInternalServerError,
+			StatusMessage: "internal server error",
+		})
+
+		if e != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(responseBody)
+
+		return
 	}
 
 	// Return output
@@ -58,5 +87,4 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
-	return
 }

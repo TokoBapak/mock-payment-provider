@@ -3,6 +3,7 @@ package presentation
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -32,33 +33,43 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 
 	// Convert to common business schema
 	chargeRequest := business.ChargeRequest{
-		PaymentType:         0, // TODO: convert  requestBody.PaymentType to this enum
+		PaymentType:         paymentTypeMap[requestBody.PaymentType],
 		OrderId:             requestBody.Transaction.OrderId,
 		TransactionAmount:   requestBody.Transaction.Amount,
-		TransactionCurrency: 0, // TODO: convert requestBody.Transaction.Currency to this enum
+		TransactionCurrency: currencyMap[requestBody.Transaction.Currency],
+
 		Customer: business.CustomerInformation{
 			FirstName:   requestBody.Customer.FirstName,
-			LastName:    "", // TODO: fill this
-			Email:       "",
-			PhoneNumber: "",
+			LastName:    requestBody.Customer.LastName,
+			Email:       requestBody.Customer.Email,
+			PhoneNumber: requestBody.Customer.PhoneNumber,
 			BillingAddress: business.Address{
-				FirstName:   "",
-				LastName:    "",
-				Email:       "",
-				Phone:       "",
-				Address:     "",
-				PostalCode:  "",
-				CountryCode: "",
+				FirstName:   requestBody.Customer.BillingAddress.FirstName,
+				LastName:    requestBody.Customer.BillingAddress.LastName,
+				Email:       requestBody.Customer.BillingAddress.Email,
+				Phone:       requestBody.Customer.BillingAddress.Phone,
+				Address:     requestBody.Customer.BillingAddress.Address,
+				PostalCode:  requestBody.Customer.BillingAddress.PostalCode,
+				CountryCode: requestBody.Customer.BillingAddress.CountryCode,
 			},
 		},
+
 		Seller: business.SellerInformation{
-			FirstName:   "",
-			LastName:    "",
-			Email:       "",
-			PhoneNumber: "",
-			Address:     "",
+			FirstName:   requestBody.Seller.FirstName,
+			LastName:    requestBody.Seller.LastName,
+			Email:       requestBody.Seller.Email,
+			PhoneNumber: requestBody.Seller.PhoneNumber,
+			Address:     requestBody.Seller.Address,
 		},
-		ProductItems: nil, // TODO: fill this
+	}
+	for _, item := range requestBody.Items {
+		chargeRequest.ProductItems = append(chargeRequest.ProductItems, business.ProductItem{
+			ID:       item.Id,
+			Price:    int64(item.Price),
+			Quantity: int64(item.Quantity),
+			Name:     item.Name,
+			Category: item.Category,
+		})
 	}
 
 	// Call business function
@@ -86,6 +97,39 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 				StatusCode:    400,
 				StatusMessage: "Mismatched total transaction amount with the accumulated amount from product list",
 			})
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(400)
+			w.Write(responseBody)
+			return
+		}
+
+		// if kind of error is RequestValidationError
+		var requestValidationError *business.RequestValidationError
+		if errors.As(err, &requestValidationError) {
+			// make the specific struct for request validation error
+			validationError := schema.ValidationError{
+				Error: schema.Error{
+					StatusCode:    400,
+					StatusMessage: "some request validation is failed",
+				},
+			}
+			if err, ok := err.(*business.RequestValidationError); ok {
+				for _, val := range err.Issues {
+					validationError.Issues = append(validationError.Issues, schema.ValidationIssue{
+						Field:   val.Field,
+						Code:    val.Code.String(),
+						Message: fmt.Sprintf("%s %s", val.Field, val.Message),
+					})
+				}
+
+			}
+
+			responseBody, err := json.Marshal(validationError)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -130,5 +174,4 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write(responseBody)
-	return
 }

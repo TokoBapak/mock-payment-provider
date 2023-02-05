@@ -19,27 +19,8 @@ import (
 )
 
 func main() {
-	httpHostname, ok := os.LookupEnv("HTTP_HOSTNAME")
-	if !ok {
-		httpHostname = "localhost"
-	}
-
-	httpPort, ok := os.LookupEnv("HTTP_PORT")
-	if !ok {
-		httpPort = "3000"
-	}
-
-	databasePath, ok := os.LookupEnv("DATABASE_PATH")
-	if !ok {
-		databasePath = "payment.db"
-	}
-
-	webhookTargetUrl, ok := os.LookupEnv("WEBHOOK_TARGET_URL")
-	if !ok {
-		webhookTargetUrl = ""
-	}
-
-	database, err := sql.Open("sqlite3", databasePath)
+	cfg := parseConfig()
+	database, err := sql.Open("sqlite3", cfg.databasePath)
 	if err != nil {
 		log.Fatalf("opening sql connection: %s", err.Error())
 	}
@@ -55,7 +36,7 @@ func main() {
 		log.Fatalf("creating transaction repository: %s", err.Error())
 	}
 
-	webhookClient, err := webhook.NewWebhookClient(webhookTargetUrl)
+	webhookClient, err := webhook.NewWebhookClient(cfg.webhookTargetURL)
 	if err != nil {
 		log.Fatalf("creating webhook client: %s", err.Error())
 	}
@@ -69,8 +50,8 @@ func main() {
 	}
 
 	httpServer, err := presentation.NewPresenter(presentation.PresenterConfig{
-		Hostname:   httpHostname,
-		Port:       httpPort,
+		Hostname:   cfg.httpHostname,
+		Port:       cfg.httpPort,
 		Dependency: &presentation.Dependency{TransactionService: transactionService},
 	})
 	if err != nil {
