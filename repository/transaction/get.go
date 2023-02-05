@@ -3,11 +3,13 @@ package transaction
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"mock-payment-provider/primitive"
+	"mock-payment-provider/repository"
 )
 
 func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (primitive.Transaction, error) {
@@ -61,6 +63,10 @@ func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (primitiv
 	if err != nil {
 		if e := tx.Rollback(); e != nil {
 			return primitive.Transaction{}, fmt.Errorf("rolling back transaction: %w", e)
+		}
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return primitive.Transaction{}, repository.ErrNotFound
 		}
 
 		return primitive.Transaction{}, fmt.Errorf("querying row: %w", err)

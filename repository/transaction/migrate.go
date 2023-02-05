@@ -29,7 +29,7 @@ func (r *Repository) Migrate(ctx context.Context) error {
 
 	_, err = tx.ExecContext(
 		ctx,
-		`CREATE TABLE transaction_log (
+		`CREATE TABLE IF NOT EXISTS transaction_log (
     		order_id TEXT PRIMARY KEY,
     		amount INT NOT NULL,
     		payment_type INT NOT NULL,
