@@ -39,11 +39,13 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 		// Create new transaction
 		err := d.TransactionRepository.Create(
 			ctx,
-			request.OrderId,
-			request.TransactionAmount,
-			request.PaymentType,
-			primitive.TransactionStatusPending,
-			time.Now().Add(time.Hour*24),
+			repository.CreateTransactionParam{
+				OrderID:     request.OrderId,
+				Amount:      request.TransactionAmount,
+				PaymentType: request.PaymentType,
+				Status:      primitive.TransactionStatusPending,
+				ExpiredAt:   time.Now().Add(time.Hour * 24),
+			},
 		)
 		if err != nil {
 			if errors.Is(err, repository.ErrDuplicate) {
@@ -84,11 +86,13 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 		// Create new transaction
 		err := d.TransactionRepository.Create(
 			ctx,
-			request.OrderId,
-			request.TransactionAmount,
-			request.PaymentType,
-			primitive.TransactionStatusPending,
-			time.Now().Add(time.Hour*3),
+			repository.CreateTransactionParam{
+				OrderID:     request.OrderId,
+				Amount:      request.TransactionAmount,
+				PaymentType: request.PaymentType,
+				Status:      primitive.TransactionStatusPending,
+				ExpiredAt:   time.Now().Add(time.Hour * 3),
+			},
 		)
 		if err != nil {
 			if errors.Is(err, repository.ErrDuplicate) {

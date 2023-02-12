@@ -7,7 +7,7 @@ import (
 
 	"mock-payment-provider/business"
 	"mock-payment-provider/primitive"
-	"mock-payment-provider/repository/transaction"
+	"mock-payment-provider/repository"
 )
 
 func (d Dependency) Cancel(ctx context.Context, orderId string) (business.CancelResponse, error) {
@@ -18,7 +18,7 @@ func (d Dependency) Cancel(ctx context.Context, orderId string) (business.Cancel
 	// Check for transaction status. If it's cancelled before or expired, then we shouldn't cancel it
 	transactionStatus, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
 	if err != nil {
-		if errors.Is(err, transaction.ErrNotFound) {
+		if errors.Is(err, repository.ErrNotFound) {
 			return business.CancelResponse{}, business.ErrTransactionNotFound
 		}
 

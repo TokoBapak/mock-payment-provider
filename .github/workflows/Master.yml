@@ -10,9 +10,15 @@ jobs:
   ci:
     name: CI
     runs-on: ubuntu-latest
-    container: golang:1
-    timeout-minutes: 30
+    container: golang:1.20.0-bullseye
+    timeout-minutes: 60
     steps:
+      - name: Install stuffs
+        run: >
+          apt-get update &&
+          apt-get upgrade -y &&
+          apt-get install -y tar gzip sqlite3 build-essential git ca-certificates
+
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
@@ -27,11 +33,8 @@ jobs:
           head: HEAD
           extra_args: --debug --only-verified
 
-      - name: Install SQLite
-        run: apt-get update && apt-get upgrade -y && apt-get install -y tar gzip sqlite3 build-essential
-
       - name: Build test
-        run: go build .
+        run: go build -buildvcs=false .
 
       - name: Run test
         run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
