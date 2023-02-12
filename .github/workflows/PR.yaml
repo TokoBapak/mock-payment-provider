@@ -13,7 +13,7 @@ jobs:
       - name: Install stuffs
         run: >
           apt-get update &&
-          apt-get upgrade -y && 
+          apt-get upgrade -y &&
           apt-get install -y tar gzip sqlite3 build-essential git ca-certificates
 
       - name: Checkout repository
@@ -31,7 +31,7 @@ jobs:
           extra_args: --debug --only-verified
 
       - name: Build test
-        run: go build . -buildvcs=false
+        run: go build -buildvcs=false .
 
       - name: Run test
         run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
