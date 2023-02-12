@@ -10,7 +10,6 @@ jobs:
   ci:
     name: CI
     runs-on: ubuntu-latest
-    container: golang:1.19
     timeout-minutes: 30
     steps:
       - name: Checkout repository
@@ -29,6 +28,10 @@ jobs:
 
       - name: Install SQLite
         run: apt-get update && apt-get upgrade -y && apt-get install -y tar gzip sqlite3 build-essential
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.19'
 
       - name: Build test
         run: go build .
