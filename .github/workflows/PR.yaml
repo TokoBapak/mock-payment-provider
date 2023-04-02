@@ -28,7 +28,7 @@ jobs:
         run: apt-get update && apt-get upgrade -y && apt-get install -y tar gzip sqlite3 build-essential
 
       - name: Build test
-        run: go build .
+        run: go build -buildvcs=false  .
 
       - name: Run test
         run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
