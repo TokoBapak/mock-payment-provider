@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
+	"mock-payment-provider/primitive"
 )
 
 func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
@@ -31,29 +31,51 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	paymentType, err := parseValidPaymentMethod(requestBody)
+	if err != nil {
+		responseBody, e := json.Marshal(schema.Error{
+			StatusCode:    http.StatusBadRequest,
+			StatusMessage: err.Error(),
+		})
+		if e != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(responseBody)
+		return
+	}
+
+	var callbackURL string
+	if paymentType == primitive.PaymentTypeEMoneyGopay && requestBody.Gopay.EnableCallback {
+		callbackURL = requestBody.Gopay.CallbackURL
+	} else if paymentType == primitive.PaymentTypeEMoneyShopeePay {
+		callbackURL = requestBody.ShopeePay.CallbackURL
+	}
+
 	// Convert to common business schema
 	chargeRequest := business.ChargeRequest{
-		PaymentType:         paymentTypeMap[requestBody.PaymentType],
-		OrderId:             requestBody.Transaction.OrderId,
-		TransactionAmount:   requestBody.Transaction.Amount,
-		TransactionCurrency: currencyMap[requestBody.Transaction.Currency],
-
+		PaymentType:         paymentType,
+		OrderId:             requestBody.TransactionDetails.OrderId,
+		TransactionAmount:   requestBody.TransactionDetails.GrossAmount,
+		TransactionCurrency: currencyMap[requestBody.TransactionDetails.Currency],
 		Customer: business.CustomerInformation{
-			FirstName:   requestBody.Customer.FirstName,
-			LastName:    requestBody.Customer.LastName,
-			Email:       requestBody.Customer.Email,
-			PhoneNumber: requestBody.Customer.PhoneNumber,
+			FirstName:   requestBody.CustomerDetails.FirstName,
+			LastName:    requestBody.CustomerDetails.LastName,
+			Email:       requestBody.CustomerDetails.Email,
+			PhoneNumber: requestBody.CustomerDetails.PhoneNumber,
 			BillingAddress: business.Address{
-				FirstName:   requestBody.Customer.BillingAddress.FirstName,
-				LastName:    requestBody.Customer.BillingAddress.LastName,
-				Email:       requestBody.Customer.BillingAddress.Email,
-				Phone:       requestBody.Customer.BillingAddress.Phone,
-				Address:     requestBody.Customer.BillingAddress.Address,
-				PostalCode:  requestBody.Customer.BillingAddress.PostalCode,
-				CountryCode: requestBody.Customer.BillingAddress.CountryCode,
+				FirstName:   requestBody.CustomerDetails.BillingAddress.FirstName,
+				LastName:    requestBody.CustomerDetails.BillingAddress.LastName,
+				Email:       requestBody.CustomerDetails.BillingAddress.Email,
+				Phone:       requestBody.CustomerDetails.BillingAddress.Phone,
+				Address:     requestBody.CustomerDetails.BillingAddress.Address,
+				PostalCode:  requestBody.CustomerDetails.BillingAddress.PostalCode,
+				CountryCode: requestBody.CustomerDetails.BillingAddress.CountryCode,
 			},
 		},
-
 		Seller: business.SellerInformation{
 			FirstName:   requestBody.Seller.FirstName,
 			LastName:    requestBody.Seller.LastName,
@@ -61,8 +83,16 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			PhoneNumber: requestBody.Seller.PhoneNumber,
 			Address:     requestBody.Seller.Address,
 		},
+		ProductItems: nil, // TODO: convert product from request body to business schema
+		BankTransferOptions: business.BankTransferOptions{
+			VirtualAccountNumber: requestBody.BankTransfer.VirtualAccountNumber,
+			RecipientName:        requestBody.BankTransfer.Permata.RecipientName,
+		},
+		EMoneyOptions: business.EMoneyOptions{
+			CallbackURL: callbackURL,
+		},
 	}
-	for _, item := range requestBody.Items {
+	for _, item := range requestBody.ItemDetails {
 		chargeRequest.ProductItems = append(chargeRequest.ProductItems, business.ProductItem{
 			ID:       item.Id,
 			Price:    int64(item.Price),
@@ -157,21 +187,204 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send return output to the client
-	responseBody, err := json.Marshal(schema.ChargeTransactionResponse{
-		StatusCode:        http.StatusCreated,
-		StatusMessage:     "The transaction is created successfully",
-		OrderId:           chargeResponse.OrderId,
-		GrossAmount:       chargeRequest.TransactionAmount,
-		PaymentType:       chargeResponse.PaymentType.String(),
-		TransactionTime:   chargeResponse.TransactionTime.Format(time.RFC3339),
-		TransactionStatus: chargeResponse.TransactionStatus.String(),
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	switch chargeResponse.PaymentType {
+	case primitive.PaymentTypeEMoneyGopay:
+		responseBody, err := json.Marshal(schema.GopayChargeSuccessResponse{
+			StatusCode:             "", // TODO: fill these
+			StatusMessage:          "",
+			TransactionId:          "",
+			OrderId:                "",
+			GrossAmount:            "",
+			PaymentType:            "",
+			TransactionTime:        "",
+			TransactionStatus:      "",
+			Actions:                nil,
+			ChannelResponseCode:    "",
+			ChannelResponseMessage: "",
+			Currency:               "",
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseBody)
+		return
+	case primitive.PaymentTypeEMoneyShopeePay:
+		responseBody, err := json.Marshal(schema.ShopeePayChargeSuccessResponse{
+			StatusCode:             "", // TODO: fill these
+			StatusMessage:          "",
+			ChannelResponseCode:    "",
+			ChannelResponseMessage: "",
+			TransactionId:          "",
+			OrderId:                "",
+			MerchantId:             "",
+			GrossAmount:            "",
+			Currency:               "",
+			PaymentType:            "",
+			TransactionTime:        "",
+			TransactionStatus:      "",
+			FraudStatus:            "",
+			Actions:                nil,
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseBody)
+		return
+	case primitive.PaymentTypeEMoneyQRIS:
+		responseBody, err := json.Marshal(schema.QRISChargeSuccessResponse{
+			StatusCode:        "", // TODO: fill these
+			StatusMessage:     "",
+			TransactionId:     "",
+			OrderId:           "",
+			MerchantId:        "",
+			GrossAmount:       "",
+			Currency:          "",
+			PaymentType:       "",
+			TransactionTime:   "",
+			TransactionStatus: "",
+			FraudStatus:       "",
+			Acquirer:          "",
+			Actions:           nil,
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseBody)
+		return
+	case primitive.PaymentTypeVirtualAccountBCA:
+		responseBody, err := json.Marshal(schema.BCAVirtualAccountChargeSuccessResponse{
+			StatusCode:        "", // TODO: fill these
+			StatusMessage:     "",
+			TransactionId:     "",
+			OrderId:           "",
+			GrossAmount:       "",
+			PaymentType:       "",
+			TransactionTime:   "",
+			TransactionStatus: "",
+			VaNumbers:         nil,
+			FraudStatus:       "",
+			Currency:          "",
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseBody)
+		return
+	case primitive.PaymentTypeVirtualAccountBRI:
+		responseBody, err := json.Marshal(schema.BRIVirtualAccountChargeSuccessResponse{
+			StatusCode:        "", // TODO: fill these
+			StatusMessage:     "",
+			TransactionId:     "",
+			OrderId:           "",
+			GrossAmount:       "",
+			PaymentType:       "",
+			TransactionTime:   "",
+			TransactionStatus: "",
+			VaNumbers:         nil,
+			FraudStatus:       "",
+			Currency:          "",
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseBody)
+		return
+	case primitive.PaymentTypeVirtualAccountBNI:
+		responseBody, err := json.Marshal(schema.BNIVirtualAccountChargeSuccessResponse{
+			StatusCode:        "", // TODO: fill these
+			StatusMessage:     "",
+			TransactionId:     "",
+			OrderId:           "",
+			GrossAmount:       "",
+			PaymentType:       "",
+			TransactionTime:   "",
+			TransactionStatus: "",
+			VaNumbers:         nil,
+			FraudStatus:       "",
+			Currency:          "",
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseBody)
+		return
+	case primitive.PaymentTypeVirtualAccountPermata:
+		responseBody, err := json.Marshal(schema.PermataVirtualAccountChargeSuccessResponse{
+			StatusCode:        "", // TODO: fill these
+			StatusMessage:     "",
+			TransactionId:     "",
+			OrderId:           "",
+			GrossAmount:       "",
+			PaymentType:       "",
+			TransactionTime:   "",
+			TransactionStatus: "",
+			FraudStatus:       "",
+			PermataVaNumber:   "",
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseBody)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	// This shouldn't happen.
+	// Running to this line of code means something's wrong when
+	// validating the payment type (or processing the payment type
+	// returned by the business logic).
 	w.WriteHeader(http.StatusInternalServerError)
-	w.Write(responseBody)
+}
+
+func parseValidPaymentMethod(r schema.ChargeTransactionRequest) (primitive.PaymentType, error) {
+	switch r.PaymentType {
+	case "gopay":
+		return primitive.PaymentTypeEMoneyGopay, nil
+	case "shopeepay":
+		return primitive.PaymentTypeEMoneyShopeePay, nil
+	case "qris":
+		return primitive.PaymentTypeEMoneyQRIS, nil
+	case "bank_transfer":
+		switch r.BankTransfer.Bank {
+		case "bca":
+			return primitive.PaymentTypeVirtualAccountBCA, nil
+		case "bri":
+			return primitive.PaymentTypeVirtualAccountBNI, nil
+		case "permata":
+			return primitive.PaymentTypeVirtualAccountPermata, nil
+		case "bni":
+			return primitive.PaymentTypeVirtualAccountBNI, nil
+		default:
+			return primitive.PaymentTypeUnspecified, fmt.Errorf("invalid bank name")
+		}
+	default:
+		return primitive.PaymentTypeUnspecified, fmt.Errorf("unknown payment type")
+	}
 }

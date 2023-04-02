@@ -31,7 +31,7 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 	switch request.PaymentType {
 	case primitive.PaymentTypeVirtualAccountBCA:
 		fallthrough
-	case primitive.PaymentTypeVirtualAccountMandiri:
+	case primitive.PaymentTypeVirtualAccountPermata:
 		fallthrough
 	case primitive.PaymentTypeVirtualAccountBRI:
 		fallthrough
@@ -117,7 +117,7 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 			TransactionTime:   time.Now(),
 			EMoneyAction: []business.EMoneyAction{
 				{
-					EMoneyActionType: business.EMoneyActionTypePay,
+					EMoneyActionType: business.EMoneyActionTypeGenerateQRCode,
 					Method:           "GET",
 					URL:              "/e-money/" + id + "/pay",
 				},
