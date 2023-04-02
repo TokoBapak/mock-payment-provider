@@ -74,6 +74,10 @@ func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (primitiv
 
 	err = tx.Commit()
 	if err != nil {
+		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
+			return primitive.Transaction{}, fmt.Errorf("rolling back transaction: %w", e)
+		}
+
 		return primitive.Transaction{}, fmt.Errorf("commiting transaction: %w", err)
 	}
 

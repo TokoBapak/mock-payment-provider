@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -63,6 +64,10 @@ func (r *Repository) Create(ctx context.Context, params repository.CreateTransac
 
 	err = tx.Commit()
 	if err != nil {
+		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
+			return fmt.Errorf("rolling back transaction: %w", e)
+		}
+
 		return fmt.Errorf("commiting transaction: %w", err)
 	}
 
