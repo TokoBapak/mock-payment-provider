@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 )
@@ -19,14 +20,17 @@ func (r *Repository) Migrate(ctx context.Context) error {
 		}
 	}()
 
-	tx, err := conn.BeginTx(ctx, &sql.TxOptions{})
+	tx, err := conn.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+		ReadOnly:  false,
+	})
 	if err != nil {
 		return fmt.Errorf("creating transaction: %w", err)
 	}
 
 	_, err = tx.ExecContext(
 		ctx,
-		`CREATE TABLE transaction_log (
+		`CREATE TABLE IF NOT EXISTS transaction_log (
     		order_id TEXT PRIMARY KEY,
     		amount INT NOT NULL,
     		payment_type INT NOT NULL,
@@ -45,6 +49,10 @@ func (r *Repository) Migrate(ctx context.Context) error {
 
 	err = tx.Commit()
 	if err != nil {
+		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
+			return fmt.Errorf("rolling back transaction: %w", e)
+		}
+
 		return fmt.Errorf("commiting transaction: %w", err)
 	}
 
