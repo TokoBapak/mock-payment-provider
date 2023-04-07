@@ -24,7 +24,7 @@ func (d *Dependency) MarkAsPaid(ctx context.Context, orderId string, paymentMeth
 	}
 
 	// Check whether transaction is already expired
-	if transaction.ExpiresAt.Before(time.Now()) {
+    if transaction.Expired() {
 		return business.ErrCannotModifyStatus
 	}
 
