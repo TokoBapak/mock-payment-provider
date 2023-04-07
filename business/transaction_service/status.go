@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"mock-payment-provider/business"
-	transaction_repository "mock-payment-provider/repository/transaction"
+	"mock-payment-provider/repository"
 )
 
 func (d Dependency) GetStatus(ctx context.Context, orderId string) (business.GetStatusResponse, error) {
@@ -16,7 +16,7 @@ func (d Dependency) GetStatus(ctx context.Context, orderId string) (business.Get
 
 	transaction, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
 	if err != nil {
-		if errors.Is(err, transaction_repository.ErrNotFound) {
+		if errors.Is(err, repository.ErrNotFound) {
 			return business.GetStatusResponse{}, business.ErrTransactionNotFound
 		}
 
