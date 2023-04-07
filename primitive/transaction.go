@@ -10,3 +10,7 @@ type Transaction struct {
 	TransactionTime   time.Time
 	ExpiresAt         time.Time
 }
+
+func (t Transaction) Expired() bool {
+	return t.ExpiresAt.Before(time.Now())
+}

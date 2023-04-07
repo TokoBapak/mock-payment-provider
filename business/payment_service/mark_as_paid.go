@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	"mock-payment-provider/business"
 	"mock-payment-provider/primitive"
@@ -24,7 +23,7 @@ func (d *Dependency) MarkAsPaid(ctx context.Context, orderId string, paymentMeth
 	}
 
 	// Check whether transaction is already expired
-    if transaction.Expired() {
+	if transaction.Expired() {
 		return business.ErrCannotModifyStatus
 	}
 

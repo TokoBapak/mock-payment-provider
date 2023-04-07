@@ -11,9 +11,9 @@ type VirtualAccountRepository interface {
 	// CreateCharge create (or replace) the charged amount of the virtual account number.
 	// If such virtual account number does not exist, it will create a new one.
 	CreateCharge(ctx context.Context, orderId string, amount int64, expiresAt time.Time) (account string, err error)
-	// Get acquires the current entry of the virtual account number.
+	// GetByVirtualAccountNumber acquires the current entry of the virtual account number.
 	// It returns ErrNotFound if the entry was not found.
-	Get(ctx context.Context, virtualAccountNumber string) (Entry, error)
+	GetByVirtualAccountNumber(ctx context.Context, virtualAccountNumber string) (Entry, error)
 	// GetChargedAmount sees the amount that is charged to that specific virtual account number.
 	// If the virtualAccountNumber does not exist, it will return an error of ErrNotFound
 	GetChargedAmount(ctx context.Context, virtualAccountNumber string) (int64, error)
