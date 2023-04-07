@@ -8,4 +8,5 @@ type Transaction struct {
 	PaymentType       PaymentType
 	TransactionStatus TransactionStatus
 	TransactionTime   time.Time
+	ExpiresAt         time.Time
 }
