@@ -9,7 +9,7 @@ import (
 	"mock-payment-provider/repository"
 )
 
-func (d *Dependency) GetDetails(ctx context.Context, id string) (business.PaymentDetailsResponse, error) {
+func (d *Dependency) GetDetail(ctx context.Context, id string) (business.PaymentDetailsResponse, error) {
 	// Set up an entry
 	var entry repository.Entry
 	var err error = nil
