@@ -31,6 +31,7 @@ func NewPresenter(config PresenterConfig) (*http.Server, error) {
 
 	router := chi.NewRouter()
 
+	router.Get("/", presenter.Index)
 	router.Post("/charge", presenter.ChargeTransaction)
 	router.Post("/{order_id}/cancel", presenter.CancelTransaction)
 	router.Get("/{order_id}/status", presenter.GetTransactionStatus)

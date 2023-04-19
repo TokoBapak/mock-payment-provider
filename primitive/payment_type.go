@@ -35,3 +35,41 @@ func (p PaymentType) String() string {
 		return "UNSPECIFIED"
 	}
 }
+
+func (p PaymentType) ToPaymentMethod() string {
+	switch p {
+	case PaymentTypeVirtualAccountBCA:
+		fallthrough
+	case PaymentTypeVirtualAccountPermata:
+		fallthrough
+	case PaymentTypeVirtualAccountBRI:
+		fallthrough
+	case PaymentTypeVirtualAccountBNI:
+		return "bank_transfer"
+	case PaymentTypeEMoneyQRIS:
+		return "qris"
+	case PaymentTypeEMoneyGopay:
+		return "gopay"
+	case PaymentTypeEMoneyShopeePay:
+		return "shopeepay"
+	case PaymentTypeUnspecified:
+		fallthrough
+	default:
+		return "UNSPECIFIED"
+	}
+}
+
+func (p PaymentType) ToBank() string {
+	switch p {
+	case PaymentTypeVirtualAccountBCA:
+		return "bca"
+	case PaymentTypeVirtualAccountPermata:
+		return "permata"
+	case PaymentTypeVirtualAccountBRI:
+		return "bri"
+	case PaymentTypeVirtualAccountBNI:
+		return "bni"
+	default:
+		return ""
+	}
+}

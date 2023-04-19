@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 	"mock-payment-provider/primitive"
@@ -106,8 +107,8 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 	for _, item := range requestBody.ItemDetails {
 		chargeRequest.ProductItems = append(chargeRequest.ProductItems, business.ProductItem{
 			ID:       item.Id,
-			Price:    int64(item.Price),
-			Quantity: int64(item.Quantity),
+			Price:    item.Price,
+			Quantity: item.Quantity,
 			Name:     item.Name,
 			Category: item.Category,
 		})
@@ -121,6 +122,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			responseBody, err := json.Marshal(schema.Error{
 				StatusCode:    406,
 				StatusMessage: "Duplicate order ID. order_id has already been utilized previously.",
+				Id:            uuid.NewString(),
 			})
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -128,7 +130,8 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(406)
+			// Do not complain. See Midtrans API if you don't believe me.
+			w.WriteHeader(200)
 			w.Write(responseBody)
 			return
 		}

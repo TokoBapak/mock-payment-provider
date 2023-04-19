@@ -26,7 +26,9 @@ func (d Dependency) Cancel(ctx context.Context, orderId string) (business.Cancel
 	}
 
 	// We can't cancel any transaction that has been canceled, settled, or expired
-	if transactionStatus.TransactionStatus != primitive.TransactionStatusPending {
+	if transactionStatus.TransactionStatus == primitive.TransactionStatusExpired ||
+		transactionStatus.TransactionStatus == primitive.TransactionStatusSettled ||
+		transactionStatus.TransactionStatus == primitive.TransactionStatusCanceled {
 		return business.CancelResponse{}, business.ErrCannotModifyStatus
 	}
 

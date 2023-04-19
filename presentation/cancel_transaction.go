@@ -78,7 +78,7 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 		StatusMessage:     "Success, transaction is canceled",
 		OrderId:           orderId,
 		PaymentType:       cancelResponse.PaymentType.String(),
-		TransactionTime:   cancelResponse.TransactionTime.Format(time.RFC3339),
+		TransactionTime:   cancelResponse.TransactionTime.Format(time.DateTime),
 		TransactionStatus: cancelResponse.TransactionStatus.String(),
 	})
 	if e != nil {

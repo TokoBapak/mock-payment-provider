@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
+	"mock-payment-provider/repository/signature"
 
 	"github.com/google/uuid"
 )
@@ -68,19 +69,21 @@ func (p *Presenter) GetTransactionStatus(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	signatureKey := signature.Generate(status.OrderId, 200, status.TransactionAmount, "")
+
 	responseBody, err := json.Marshal(schema.TransactionStatusResponse{
 		StatusCode:               "200",
 		StatusMessage:            "Success, transaction found",
-		TransactionId:            "",
+		TransactionId:            status.OrderId,
 		MaskedCard:               "",
 		OrderId:                  status.OrderId,
-		PaymentType:              status.PaymentType.String(),
-		TransactionTime:          status.TransactionTime.Format(time.RFC3339),
+		PaymentType:              status.PaymentType.ToPaymentMethod(),
+		TransactionTime:          status.TransactionTime.Format(time.DateTime),
 		TransactionStatus:        status.TransactionStatus.String(),
-		FraudStatus:              "",
+		FraudStatus:              "accept",
 		ApprovalCode:             "",
-		SignatureKey:             "",
-		Bank:                     "",
+		SignatureKey:             signatureKey,
+		Bank:                     status.PaymentType.ToBank(),
 		GrossAmount:              status.TransactionAmount,
 		ChannelResponseCode:      "",
 		ChannelResponseMessage:   "",
@@ -95,6 +98,6 @@ func (p *Presenter) GetTransactionStatus(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusInternalServerError)
+	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }
