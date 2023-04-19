@@ -57,7 +57,7 @@ func TestValidateChargeRequest(t *testing.T) {
 	// test positive case
 	t.Run("positive test case", func(t *testing.T) {
 		// action
-		err := transaction_service.ValidateChageRequest(request)
+		err := transaction_service.ValidateChargeRequest(request)
 
 		// assert
 		if err != nil {
@@ -75,7 +75,7 @@ func TestValidateChargeRequest(t *testing.T) {
 		mock.PaymentType = 0
 
 		// action
-		err := transaction_service.ValidateChageRequest(mock)
+		err := transaction_service.ValidateChargeRequest(mock)
 
 		// assert
 		if err == nil {
@@ -95,7 +95,7 @@ func TestValidateChargeRequest(t *testing.T) {
 		t.Run("required", func(t *testing.T) {
 			// empty string
 			mock.OrderId = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			// assert
 			if err == nil {
@@ -116,7 +116,7 @@ func TestValidateChargeRequest(t *testing.T) {
 		t.Run("greater than 0", func(t *testing.T) {
 			// less than 0
 			mock.TransactionAmount = -1
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -129,7 +129,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 			// equal 0
 			mock.TransactionAmount = 0
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -150,7 +150,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("invalid value", func(t *testing.T) {
 			mock.TransactionCurrency = 0
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -171,7 +171,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Customer.FirstName = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -188,7 +188,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i < 260; i++ {
 				mock.Customer.FirstName += "a"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -212,7 +212,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i < 260; i++ {
 				mock.Customer.LastName += "a"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -233,7 +233,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Customer.Email = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -249,7 +249,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i < 260; i++ {
 				mock.Customer.Email += "a"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -263,7 +263,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("valid email", func(t *testing.T) {
 			mock.Customer.Email = "aaa@.com"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.Email is invalid, instead got %T", err)
@@ -274,7 +274,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.Email = "aaa.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.Email is invalid, instead got %T", err)
@@ -285,7 +285,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.Email = "aaa@com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.Email is invalid, instead got %T", err)
@@ -296,7 +296,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.Email = "@fefe@email.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.Email is invalid, instead got %T", err)
@@ -307,7 +307,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.Email = "@fefe@aaa.bbb.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors *business.RequestValidationError"+
 					"when the given Customer.Email is valid, instead got %T", err)
@@ -318,7 +318,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.Email = "fefe@aaa.bbb.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err != nil {
 				t.Errorf("expect errors nil"+
 					"when the given Customer.Email is valid, instead got %T", err)
@@ -338,7 +338,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Customer.PhoneNumber = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.PhoneNumber is empty, instead got %T", err)
@@ -353,7 +353,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i < 260; i++ {
 				mock.Customer.PhoneNumber += "0"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.PhoneNumber is greater than 255 characters, instead got %T", err)
@@ -366,7 +366,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("invalid", func(t *testing.T) {
 			mock.Customer.PhoneNumber = "123456"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.PhoneNumber is invalid, instead got %T", err)
@@ -386,7 +386,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Customer.BillingAddress.FirstName = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.FirstName is empty, instead got %T", err)
@@ -401,7 +401,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i <= 26; i++ {
 				mock.Customer.BillingAddress.FirstName += "aaaaaaaaaa"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.FirstName is greater than 255 characters length, instead got %T", err)
@@ -423,7 +423,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i <= 26; i++ {
 				mock.Customer.BillingAddress.LastName += "aaaaaaaaaa"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.LastName is greater than 255 characters, instead got %T", err)
@@ -443,7 +443,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Customer.BillingAddress.Email = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -459,7 +459,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i < 26; i++ {
 				mock.Customer.BillingAddress.Email += "aaaaaaaaaa"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -473,7 +473,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("valid email", func(t *testing.T) {
 			mock.Customer.BillingAddress.Email = "aaa@.com"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.Email is invalid, instead got %T", err)
@@ -484,7 +484,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.BillingAddress.Email = "aaa.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.Email is invalid, instead got %T", err)
@@ -495,7 +495,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.BillingAddress.Email = "aaa@com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.Email is invalid, instead got %T", err)
@@ -506,7 +506,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.BillingAddress.Email = "@fefe@email.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.Email is invalid, instead got %T", err)
@@ -517,7 +517,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.BillingAddress.Email = "@fefe@aaa.bbb.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors *business.RequestValidationErrorl"+
 					"when the given Customer.BillingAddress.Email is valid, instead got %T", err)
@@ -528,7 +528,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Customer.BillingAddress.Email = "fefe@aaa.bbb.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err != nil {
 				t.Errorf("expect errors nil"+
 					"when the given Customer.BillingAddress.Email is valid, instead got %T", err)
@@ -548,7 +548,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Customer.BillingAddress.Phone = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.Phone is empty, instead got %T", err)
@@ -563,7 +563,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i < 260; i++ {
 				mock.Customer.BillingAddress.Phone += "0"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.Phone is greater than 255 characters, instead got %T", err)
@@ -576,7 +576,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("invalid", func(t *testing.T) {
 			mock.Customer.BillingAddress.Phone = "123456"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.Phone is invalid, instead got %T", err)
@@ -596,7 +596,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Customer.BillingAddress.Address = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.Address is empty, instead got %T", err)
@@ -611,7 +611,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i <= 50; i++ {
 				mock.Customer.BillingAddress.Address += "aaaaaaaaaaa"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.Address is greater than 500 characters length, instead got %T", err)
@@ -631,7 +631,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Customer.BillingAddress.PostalCode = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					" when the given Customer.BillingAddress.PostalCode is empty, instead got %T", err)
@@ -644,7 +644,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("less than 10 characters length", func(t *testing.T) {
 			mock.Customer.BillingAddress.PostalCode = "123456789123456789"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.PostalCode is greater than 10 characters length, instead got %T", err)
@@ -657,7 +657,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("invalid", func(t *testing.T) {
 			mock.Customer.BillingAddress.PostalCode = "abcdefg"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.PostalCode is invalid, instead got %T", err)
@@ -677,7 +677,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Customer.BillingAddress.CountryCode = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.CountryCode is empty, instead got %T", err)
@@ -690,7 +690,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("less than 5 characters length", func(t *testing.T) {
 			mock.Customer.BillingAddress.CountryCode = "123456789"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.CountryCode is greater than 5 characters length, instead got %T", err)
@@ -703,7 +703,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("invalid", func(t *testing.T) {
 			mock.Customer.BillingAddress.CountryCode = "abc"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Customer.BillingAddress.CountryCode is invalid, instead got %T", err)
@@ -723,7 +723,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Seller.FirstName = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.FirstName is empty, instead got %T", err)
@@ -738,7 +738,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i <= 26; i++ {
 				mock.Seller.FirstName += "aaaaaaaaaaa"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.FirstName is greater than 255 characters length, instead got %T", err)
@@ -761,7 +761,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i <= 26; i++ {
 				mock.Seller.LastName += "aaaaaaaaaaa"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.LastName is greater than 255 characters length, instead got %T", err)
@@ -781,7 +781,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Seller.Email = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -797,7 +797,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i < 26; i++ {
 				mock.Seller.Email += "aaaaaaaaaa"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
@@ -811,7 +811,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("valid email", func(t *testing.T) {
 			mock.Seller.Email = "aaa@.com"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.Email is invalid, instead got %T", err)
@@ -822,7 +822,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Seller.Email = "aaa.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.Email is invalid, instead got %T", err)
@@ -833,7 +833,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Seller.Email = "aaa@com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.Email is invalid, instead got %T", err)
@@ -844,7 +844,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Seller.Email = "@fefe@email.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.Email is invalid, instead got %T", err)
@@ -855,7 +855,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Seller.Email = "@fefe@aaa.bbb.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors *business.RequestValidationError"+
 					"when the given Seller.Email is valid, instead got %T", err)
@@ -866,7 +866,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			}
 
 			mock.Seller.Email = "fefe@aaa.bbb.com"
-			err = transaction_service.ValidateChageRequest(mock)
+			err = transaction_service.ValidateChargeRequest(mock)
 			if err != nil {
 				t.Errorf("expect errors nil"+
 					"when the given Seller.Email is valid, instead got %T", err)
@@ -886,7 +886,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Seller.PhoneNumber = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.PhoneNumber is empty, instead got %T", err)
@@ -901,7 +901,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i < 260; i++ {
 				mock.Seller.PhoneNumber += "0"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.PhoneNumber is greater than 255 characters, instead got %T", err)
@@ -914,7 +914,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("invalid", func(t *testing.T) {
 			mock.Seller.PhoneNumber = "123456"
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.PhoneNumber is invalid, instead got %T", err)
@@ -934,7 +934,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 		t.Run("required", func(t *testing.T) {
 			mock.Seller.Address = ""
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.Address is empty, instead got %T", err)
@@ -949,7 +949,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			for i := 0; i <= 50; i++ {
 				mock.Seller.Address += "aaaaaaaaaaa"
 			}
-			err := transaction_service.ValidateChageRequest(mock)
+			err := transaction_service.ValidateChargeRequest(mock)
 			if err == nil {
 				t.Errorf("expect errors as *business.RequestValidationError"+
 					"when the given Seller.Address is greater than 500 characters length, instead got %T", err)
@@ -970,7 +970,7 @@ func TestValidateChargeRequest(t *testing.T) {
 			var requestValidationError *business.RequestValidationError
 			t.Run("required", func(t *testing.T) {
 				mock.ProductItems[0].ID = ""
-				err := transaction_service.ValidateChageRequest(mock)
+				err := transaction_service.ValidateChargeRequest(mock)
 				if err == nil {
 					t.Errorf("expect errors as *business.RequestValidatorError"+
 						"when the given ProductItems[0].ID is empty, instead got %T", err)
@@ -989,7 +989,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 			t.Run("greater than 0", func(t *testing.T) {
 				mock.ProductItems[0].Price = 0
-				err := transaction_service.ValidateChageRequest(mock)
+				err := transaction_service.ValidateChargeRequest(mock)
 				if err == nil {
 					t.Errorf("expect errors as *business.RequestValidatorError"+
 						"when the given ProductItems[0].Price is 0, instead got %T", err)
@@ -1000,7 +1000,7 @@ func TestValidateChargeRequest(t *testing.T) {
 				}
 
 				mock.ProductItems[0].Price = -1
-				err = transaction_service.ValidateChageRequest(mock)
+				err = transaction_service.ValidateChargeRequest(mock)
 				if err == nil {
 					t.Errorf("expect errors as *business.RequestValidatorError"+
 						"when the given ProductItems[0].ID is less than 0, instead got %T", err)
@@ -1019,7 +1019,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 			t.Run("greater than 0", func(t *testing.T) {
 				mock.ProductItems[0].Quantity = 0
-				err := transaction_service.ValidateChageRequest(mock)
+				err := transaction_service.ValidateChargeRequest(mock)
 				if err == nil {
 					t.Errorf("expect errors as *business.RequestValidatorError"+
 						"when the given ProductItems[0].Quantity is 0, instead got %T", err)
@@ -1030,7 +1030,7 @@ func TestValidateChargeRequest(t *testing.T) {
 				}
 
 				mock.ProductItems[0].Quantity = -1
-				err = transaction_service.ValidateChageRequest(mock)
+				err = transaction_service.ValidateChargeRequest(mock)
 				if err == nil {
 					t.Errorf("expect errors as *business.RequestValidatorError"+
 						"when the given ProductItems[0].Quantity less than 0, instead got %T", err)
@@ -1049,7 +1049,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 			t.Run("required", func(t *testing.T) {
 				mock.ProductItems[0].Name = ""
-				err := transaction_service.ValidateChageRequest(mock)
+				err := transaction_service.ValidateChargeRequest(mock)
 				if err == nil {
 					t.Errorf("expect errors as *business.RequestValidatorError"+
 						"when the given ProductItems[0].Name is empty, instead got %T", err)
@@ -1064,7 +1064,7 @@ func TestValidateChargeRequest(t *testing.T) {
 				for i := 0; i <= 26; i++ {
 					mock.ProductItems[0].Name += "aaaaaaaaaaa"
 				}
-				err := transaction_service.ValidateChageRequest(mock)
+				err := transaction_service.ValidateChargeRequest(mock)
 				if err == nil {
 					t.Errorf("expect errors as *business.RequestValidatorError"+
 						"when the given ProductItems[0].Name is greater than 255 characters length, instead got %T", err)
@@ -1083,7 +1083,7 @@ func TestValidateChargeRequest(t *testing.T) {
 
 			t.Run("required", func(t *testing.T) {
 				mock.ProductItems[0].Category = ""
-				err := transaction_service.ValidateChageRequest(mock)
+				err := transaction_service.ValidateChargeRequest(mock)
 				if err == nil {
 					t.Errorf("expect errors as *business.RequestValidatorError"+
 						"when the given ProductItems[0].Category is empty, instead got %T", err)
@@ -1098,7 +1098,7 @@ func TestValidateChargeRequest(t *testing.T) {
 				for i := 0; i <= 26; i++ {
 					mock.ProductItems[0].Category += "aaaaaaaaaaa"
 				}
-				err := transaction_service.ValidateChageRequest(mock)
+				err := transaction_service.ValidateChargeRequest(mock)
 				if err == nil {
 					t.Errorf("expect errors as *business.RequestValidatorError"+
 						"when the given ProductItems[0].Category is greater than 255 characters length, instead got %T", err)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"mock-payment-provider/business"
 	"mock-payment-provider/repository"
 )
@@ -26,5 +25,8 @@ func (d Dependency) GetStatus(ctx context.Context, orderId string) (business.Get
 	return business.GetStatusResponse{
 		OrderId:           orderId,
 		TransactionStatus: transaction.TransactionStatus,
+		TransactionAmount: transaction.TransactionAmount,
+		PaymentType:       transaction.PaymentType,
+		TransactionTime:   transaction.TransactionTime,
 	}, nil
 }

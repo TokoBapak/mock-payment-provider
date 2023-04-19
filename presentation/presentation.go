@@ -34,6 +34,7 @@ func NewPresenter(config PresenterConfig) (*http.Server, error) {
 	router.Post("/charge", presenter.ChargeTransaction)
 	router.Post("/{order_id}/cancel", presenter.CancelTransaction)
 	router.Get("/{order_id}/status", presenter.GetTransactionStatus)
+	router.Post("/{order_id}/expire", presenter.ExpireTransaction)
 
 	server := &http.Server{
 		Addr:              net.JoinHostPort(config.Hostname, config.Port),

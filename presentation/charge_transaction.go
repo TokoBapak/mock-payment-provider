@@ -55,6 +55,17 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		callbackURL = requestBody.ShopeePay.CallbackURL
 	}
 
+	var productItems []business.ProductItem
+	for _, product := range requestBody.ItemDetails {
+		productItems = append(productItems, business.ProductItem{
+			ID:       product.Id,
+			Price:    product.Price,
+			Quantity: product.Quantity,
+			Name:     product.Name,
+			Category: product.Category,
+		})
+	}
+
 	// Convert to common business schema
 	chargeRequest := business.ChargeRequest{
 		PaymentType:         paymentType,
@@ -83,7 +94,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			PhoneNumber: requestBody.Seller.PhoneNumber,
 			Address:     requestBody.Seller.Address,
 		},
-		ProductItems: nil, // TODO: convert product from request body to business schema
+		ProductItems: productItems,
 		BankTransferOptions: business.BankTransferOptions{
 			VirtualAccountNumber: requestBody.BankTransfer.VirtualAccountNumber,
 			RecipientName:        requestBody.BankTransfer.Permata.RecipientName,

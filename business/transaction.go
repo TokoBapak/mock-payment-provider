@@ -128,4 +128,7 @@ type CancelResponse struct {
 type GetStatusResponse struct {
 	OrderId           string
 	TransactionStatus primitive.TransactionStatus
+	TransactionAmount int64
+	PaymentType       primitive.PaymentType
+	TransactionTime   time.Time
 }

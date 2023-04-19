@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 
@@ -13,20 +14,21 @@ import (
 )
 
 func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
-	// Parse input
 	orderId := chi.URLParam(r, "order_id")
 	if orderId == "" {
-		responseBody, e := json.Marshal(schema.Error{
-			StatusCode:    http.StatusBadRequest,
-			StatusMessage: "Empty Order ID",
+		responseBody, err := json.Marshal(schema.Error{
+			StatusCode:    404,
+			StatusMessage: "Transaction doesn't exist.",
+			Id:            uuid.NewString(),
 		})
-		if e != nil {
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
+		// Do not complain. Do complain to Midtrans about the status code usage instead.
+		w.WriteHeader(http.StatusOK)
 		w.Write(responseBody)
 		return
 	}

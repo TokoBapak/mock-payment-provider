@@ -32,7 +32,7 @@ type ChargeTransactionRequest struct {
 	ItemDetails []struct {
 		Id       string `json:"id"`
 		Price    int64  `json:"price"`
-		Quantity int    `json:"quantity"`
+		Quantity int64  `json:"quantity"`
 		Name     string `json:"name"`
 		Category string `json:"category"`
 	} `json:"item_details"`
