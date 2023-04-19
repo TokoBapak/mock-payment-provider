@@ -5,7 +5,7 @@ type PaymentType uint8
 const (
 	PaymentTypeUnspecified PaymentType = iota
 	PaymentTypeVirtualAccountBCA
-	PaymentTypeVirtualAccountMandiri
+	PaymentTypeVirtualAccountPermata
 	PaymentTypeVirtualAccountBRI
 	PaymentTypeVirtualAccountBNI
 	PaymentTypeEMoneyQRIS
@@ -17,8 +17,8 @@ func (p PaymentType) String() string {
 	switch p {
 	case PaymentTypeVirtualAccountBCA:
 		return "VIRTUAL_ACCOUNT_BCA"
-	case PaymentTypeVirtualAccountMandiri:
-		return "VIRTUAL_ACCOUNT_MANDIRI"
+	case PaymentTypeVirtualAccountPermata:
+		return "VIRTUAL_ACCOUNT_PERMATA"
 	case PaymentTypeVirtualAccountBRI:
 		return "VIRTUAL_ACCOUNT_BRI"
 	case PaymentTypeVirtualAccountBNI:

@@ -49,7 +49,7 @@ func NewPresenter(config PresenterConfig) (*http.Server, error) {
 
 var paymentTypeMap = map[string]primitive.PaymentType{
 	"VIRTUAL_ACCOUNT_BCA":     primitive.PaymentTypeVirtualAccountBCA,
-	"VIRTUAL_ACCOUNT_MANDIRI": primitive.PaymentTypeVirtualAccountMandiri,
+	"VIRTUAL_ACCOUNT_PERMATA": primitive.PaymentTypeVirtualAccountPermata,
 	"VIRTUAL_ACCOUNT_BRI":     primitive.PaymentTypeVirtualAccountBRI,
 	"VIRTUAL_ACCOUNT_BNI":     primitive.PaymentTypeVirtualAccountBNI,
 	"E_MONEY_QRIS":            primitive.PaymentTypeEMoneyQRIS,
