@@ -22,15 +22,15 @@ const (
 func (t TransactionStatus) String() string {
 	switch t {
 	case TransactionStatusPending:
-		return "PENDING"
+		return "pending"
 	case TransactionStatusDenied:
-		return "DENIED"
+		return "denied"
 	case TransactionStatusSettled:
-		return "SETTLED"
+		return "settled"
 	case TransactionStatusExpired:
-		return "EXPIRED"
+		return "expired"
 	case TransactionStatusCanceled:
-		return "CANCELED"
+		return "canceled"
 	case TransactionStatusUnspecified:
 		fallthrough
 	default:

@@ -13,9 +13,9 @@ func TestPaymentType_String(t *testing.T) {
 		}
 	})
 
-	t.Run("PaymentTypeVirtualAccountMandiri", func(t *testing.T) {
-		if primitive.PaymentTypeVirtualAccountMandiri.String() != "VIRTUAL_ACCOUNT_MANDIRI" {
-			t.Errorf("expecting PaymentTypeVirtualAccountMandiri.String() to be 'VIRTUAL_ACCOUNT_MANDIRI', instead got %s", primitive.PaymentTypeVirtualAccountMandiri.String())
+	t.Run("PaymentTypeVirtualAccountPermata", func(t *testing.T) {
+		if primitive.PaymentTypeVirtualAccountPermata.String() != "VIRTUAL_ACCOUNT_PERMATA" {
+			t.Errorf("expecting PaymentTypeVirtualAccountPermata.String() to be 'VIRTUAL_ACCOUNT_PERMATA', instead got %s", primitive.PaymentTypeVirtualAccountPermata.String())
 		}
 	})
 

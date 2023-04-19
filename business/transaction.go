@@ -57,19 +57,22 @@ type EMoneyActionType uint8
 
 const (
 	EMoneyActionTypeUnspecified EMoneyActionType = iota
-	EMoneyActionTypePay
+	EMoneyActionTypeGenerateQRCode
+	EMoneyActionTypeDeeplinkRedirect
 	EMoneyActionTypeStatus
 	EMoneyActionTypeCancel
 )
 
 func (e EMoneyActionType) String() string {
 	switch e {
-	case EMoneyActionTypePay:
-		return "CODE"
+	case EMoneyActionTypeGenerateQRCode:
+		return "generate-qr-code"
 	case EMoneyActionTypeStatus:
-		return "STATUS"
+		return "get-status"
 	case EMoneyActionTypeCancel:
-		return "CANCEL"
+		return "cancel"
+	case EMoneyActionTypeDeeplinkRedirect:
+		return "deeplink-redirect"
 	case EMoneyActionTypeUnspecified:
 		fallthrough
 	default:
@@ -83,6 +86,15 @@ type EMoneyAction struct {
 	URL              string
 }
 
+type BankTransferOptions struct {
+	VirtualAccountNumber string
+	RecipientName        string
+}
+
+type EMoneyOptions struct {
+	CallbackURL string `json:"callback_url"`
+}
+
 type ChargeRequest struct {
 	PaymentType         primitive.PaymentType
 	OrderId             string
@@ -91,6 +103,8 @@ type ChargeRequest struct {
 	Customer            CustomerInformation
 	Seller              SellerInformation
 	ProductItems        []ProductItem
+	BankTransferOptions BankTransferOptions
+	EMoneyOptions       EMoneyOptions
 }
 
 type ChargeResponse struct {
