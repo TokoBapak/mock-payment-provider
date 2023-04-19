@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	"mock-payment-provider/primitive"
 	"mock-payment-provider/repository"
@@ -36,7 +35,6 @@ func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (primitiv
 		return primitive.Transaction{}, fmt.Errorf("creating transaction: %w", err)
 	}
 
-	var expiredAt time.Time
 	var transaction primitive.Transaction
 	err = tx.QueryRowContext(
 		ctx,
@@ -57,7 +55,7 @@ func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (primitiv
 		&transaction.TransactionAmount,
 		&transaction.PaymentType,
 		&transaction.TransactionStatus,
-		&expiredAt,
+		&transaction.ExpiresAt,
 		&transaction.TransactionTime,
 	)
 	if err != nil {
