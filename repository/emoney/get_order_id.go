@@ -34,6 +34,37 @@ func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (reposito
 		return repository.Entry{}, fmt.Errorf("creating transaction: %w", err)
 	}
 
+	var entry repository.Entry
+	err = tx.QueryRowContext(
+		ctx,
+		`SELECT
+    		order_id,
+    		id,
+    		amount,
+    		expired_at
+		FROM
+		    emoney_entries
+		WHERE
+			order_id = ?`,
+		orderId,
+	).Scan(
+		&entry.OrderId,
+		&entry.EMoneyID,
+		&entry.ChargedAmount,
+		&entry.ExpiresAt,
+	)
+	if err != nil {
+		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
+			return repository.Entry{}, fmt.Errorf("rolling back transaction: %w", e)
+		}
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return repository.Entry{}, repository.ErrNotFound
+		}
+
+		return repository.Entry{}, fmt.Errorf("executing query: %w", err)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
@@ -43,5 +74,5 @@ func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (reposito
 		return repository.Entry{}, fmt.Errorf("commiting transaction: %w", err)
 	}
 
-	return repository.Entry{}, nil
+	return entry, nil
 }

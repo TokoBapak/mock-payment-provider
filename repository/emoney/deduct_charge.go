@@ -1,8 +1,15 @@
 package emoney
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
-func (r *Repository) DeductCharge(ctx context.Context, id string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) DeductCharge(ctx context.Context, orderId string) error {
+	if orderId == "" {
+		return fmt.Errorf("orderId is empty")
+	}
+
+	// No need to do anything. Trust me.
+	return nil
 }

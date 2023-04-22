@@ -206,15 +206,27 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 	switch chargeResponse.PaymentType {
 	case primitive.PaymentTypeEMoneyGopay:
 		responseBody, err := json.Marshal(schema.GopayChargeSuccessResponse{
-			StatusCode:             "", // TODO: fill these
-			StatusMessage:          "",
-			TransactionId:          chargeResponse.OrderId,
-			OrderId:                chargeResponse.OrderId,
-			GrossAmount:            strconv.FormatInt(chargeResponse.TransactionAmount, 10),
-			PaymentType:            chargeResponse.PaymentType.ToPaymentMethod(),
-			TransactionTime:        chargeResponse.TransactionTime.Format(time.DateTime),
-			TransactionStatus:      chargeResponse.TransactionStatus.String(),
-			Actions:                nil,
+			StatusCode:        "", // TODO: fill these
+			StatusMessage:     "",
+			TransactionId:     chargeResponse.OrderId,
+			OrderId:           chargeResponse.OrderId,
+			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
+			PaymentType:       chargeResponse.PaymentType.ToPaymentMethod(),
+			TransactionTime:   chargeResponse.TransactionTime.Format(time.DateTime),
+			TransactionStatus: chargeResponse.TransactionStatus.String(),
+			Actions: []struct {
+				Name   string        `json:"name"`
+				Method string        `json:"method"`
+				Url    string        `json:"url"`
+				Fields []interface{} `json:"fields,omitempty"`
+			}{
+				{
+					Name:   "",
+					Method: "",
+					Url:    "",
+					Fields: nil,
+				},
+			},
 			ChannelResponseCode:    "",
 			ChannelResponseMessage: "",
 			Currency:               "IDR",
