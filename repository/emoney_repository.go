@@ -16,14 +16,14 @@ type EMoneyRepository interface {
 	// GetByID acquires the current entry of the specified ID.
 	// It returns ErrNotFound if the entry was not found.
 	// It returns ErrExpired if the ID is expired
-	GetByID(ctx context.Context, id string) (Entry, error)
+	GetByID(ctx context.Context, orderId string) (Entry, error)
 
 	// CheckPaidStatus checks whether an ID is paid
-	CheckPaidStatus(ctx context.Context, id string) (paid bool, err error)
+	CheckPaidStatus(ctx context.Context, orderId string) (paid bool, err error)
 
 	// CancelCharge cancels a charge for the specified ID.
-	CancelCharge(ctx context.Context, id string) error
-	
+	CancelCharge(ctx context.Context, orderId string) error
+
 	// DeductCharge will free the id of any charge and mark is as paid
-	DeductCharge(ctx context.Context, id string) error
+	DeductCharge(ctx context.Context, orderId string) error
 }

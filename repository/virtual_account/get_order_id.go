@@ -10,9 +10,9 @@ import (
 	"mock-payment-provider/repository"
 )
 
-func (r *Repository) GetByVirtualAccountNumber(ctx context.Context, virtualAccountNumber string) (repository.Entry, error) {
-	if virtualAccountNumber == "" {
-		return repository.Entry{}, fmt.Errorf("virtualAccountNumber is empty")
+func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (repository.Entry, error) {
+	if orderId == "" {
+		return repository.Entry{}, fmt.Errorf("orderId is empty")
 	}
 
 	conn, err := r.db.Conn(ctx)
@@ -34,24 +34,6 @@ func (r *Repository) GetByVirtualAccountNumber(ctx context.Context, virtualAccou
 		return repository.Entry{}, fmt.Errorf("creating transaction: %w", err)
 	}
 
-	var currentOrderId string
-	err = tx.QueryRowContext(
-		ctx,
-		`SELECT current_order_id FROM virtual_accounts WHERE virtual_account_number = ?`,
-		virtualAccountNumber,
-	).Scan(&currentOrderId)
-	if err != nil {
-		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
-			return repository.Entry{}, fmt.Errorf("rolling back transaction: %w", err)
-		}
-
-		if errors.Is(err, sql.ErrNoRows) {
-			return repository.Entry{}, repository.ErrNotFound
-		}
-
-		return repository.Entry{}, fmt.Errorf("executing query: %w", err)
-	}
-
 	var entry repository.Entry
 	err = tx.QueryRowContext(
 		ctx,
@@ -64,7 +46,7 @@ func (r *Repository) GetByVirtualAccountNumber(ctx context.Context, virtualAccou
 		    virtual_account_entries
 		WHERE
 		    order_id = ?`,
-		currentOrderId,
+		orderId,
 	).Scan(
 		&entry.OrderId,
 		&entry.VirtualAccountNumber,

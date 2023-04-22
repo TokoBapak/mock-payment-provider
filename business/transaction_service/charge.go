@@ -62,10 +62,15 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 		}
 
 		// Acquire virtual account number from customer email
+		virtualAccountNumber, err := d.VirtualAccountRepository.CreateOrGetVirtualAccountNumber(ctx, request.Customer.Email)
+		if err != nil {
+			return business.ChargeResponse{}, fmt.Errorf("acquiring virtual account number for %s: %w", request.Customer.Email, err)
+		}
 
 		// Create a virtual account entry
-		virtualAccountNumber, err := d.VirtualAccountRepository.CreateCharge(
+		_, err = d.VirtualAccountRepository.CreateCharge(
 			ctx,
+			virtualAccountNumber,
 			request.OrderId,
 			request.TransactionAmount,
 			expiredAt,
@@ -87,6 +92,9 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 				// TODO: properly log errors
 				return
 			}
+
+			// Sleep for 10 seconds to make sure client has received the response
+			time.Sleep(time.Second * 10)
 
 			ctx := context.Background()
 
@@ -201,6 +209,9 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 				// TODO: properly log errors
 				return
 			}
+
+			// Sleep for 10 seconds to make sure client has received the response
+			time.Sleep(time.Second * 10)
 
 			ctx := context.Background()
 

@@ -2,9 +2,10 @@ package transaction_service_test
 
 import (
 	"errors"
+	"testing"
+
 	"mock-payment-provider/business"
 	"mock-payment-provider/business/transaction_service"
-	"testing"
 )
 
 func TestValidateChargeRequest(t *testing.T) {
@@ -1110,5 +1111,4 @@ func TestValidateChargeRequest(t *testing.T) {
 			})
 		})
 	})
-
 }
