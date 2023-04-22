@@ -39,7 +39,8 @@ func (d *Dependency) MarkAsPaid(ctx context.Context, orderId string, paymentMeth
 	case primitive.PaymentTypeVirtualAccountBNI:
 		fallthrough
 	case primitive.PaymentTypeVirtualAccountBRI:
-		// TODO: add VirtualAccountPermata
+		fallthrough
+	case primitive.PaymentTypeVirtualAccountPermata:
 		err := d.virtualAccountRepository.DeductCharge(ctx, paymentId)
 		if err != nil {
 			return fmt.Errorf("deducting virtual account charge: %w", err)

@@ -9,13 +9,11 @@ import (
 	"time"
 )
 
-func (r *Repository) CreateCharge(ctx context.Context, orderId string, amount int64, expiresAt time.Time) (account string, err error) {
+func (r *Repository) CreateCharge(ctx context.Context, virtualAccountNumber string, orderId string, amount int64, expiresAt time.Time) (account string, err error) {
 	if orderId == "" {
 		return "", fmt.Errorf("orderId is empty")
 	}
 
-	// Generate a virtual account number
-	var virtualAccountNumber string
 	conn, err := r.db.Conn(ctx)
 	if err != nil {
 		return "", fmt.Errorf("acquiring connection from pool: %w", err)
@@ -37,7 +35,7 @@ func (r *Repository) CreateCharge(ctx context.Context, orderId string, amount in
 
 	_, err = tx.ExecContext(
 		ctx,
-		`INSERT INTO virtual_accounts
+		`INSERT INTO virtual_account_entries
 			(
 			 	order_id,
 			 	virtual_account_number,
@@ -54,6 +52,20 @@ func (r *Repository) CreateCharge(ctx context.Context, orderId string, amount in
 		expiresAt,
 		time.Now(),
 		time.Now(),
+	)
+	if err != nil {
+		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
+			return "", fmt.Errorf("rolling back transaction: %w", err)
+		}
+
+		return "", fmt.Errorf("executing query: %w", err)
+	}
+
+	_, err = tx.ExecContext(
+		ctx,
+		`UPDATE virtual_accounts SET current_order_id = ? AND updated_at = CURRENT_TIMESTAMP WHERE virtual_account_number = ?`,
+		orderId,
+		virtualAccountNumber,
 	)
 	if err != nil {
 		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {

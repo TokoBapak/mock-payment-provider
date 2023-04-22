@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mock-payment-provider/presentation/schema"
-	"mock-payment-provider/repository/signature"
 	"strconv"
 	"time"
+
+	"mock-payment-provider/presentation/schema"
+	"mock-payment-provider/repository/signature"
 
 	"mock-payment-provider/business"
 	"mock-payment-provider/primitive"
@@ -59,6 +60,8 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 
 			return business.ChargeResponse{}, fmt.Errorf("creating new transaction: %w", err)
 		}
+
+		// Acquire virtual account number from customer email
 
 		// Create a virtual account entry
 		virtualAccountNumber, err := d.VirtualAccountRepository.CreateCharge(

@@ -30,7 +30,37 @@ func (r *Repository) Migrate(ctx context.Context) error {
 
 	_, err = tx.ExecContext(
 		ctx,
-		`CREATE TABLE IF NOT EXISTS virtual_accounts (
+		`CREATE TABLE virtual_accounts (
+    		unique_identifier TEXT PRIMARY KEY,
+    		virtual_account_number TEXT NOT NULL,
+    		current_order_id TEXT NULL,
+    		created_at TEXT NOT NULL,
+    		updated_at TEXT NOT NULL
+		)`,
+	)
+	if err != nil {
+		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
+			return fmt.Errorf("rolling back transaction: %w", err)
+		}
+
+		return fmt.Errorf("executing query: %w", err)
+	}
+
+	_, err = tx.ExecContext(
+		ctx,
+		`CREATE UNIQUE INDEX IF NOT EXISTS unq_virtual_accounts_va_number ON virtual_accounts (virtual_account_numbers)`,
+	)
+	if err != nil {
+		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
+			return fmt.Errorf("rolling back transaction: %w", err)
+		}
+
+		return fmt.Errorf("executing query: %w", err)
+	}
+
+	_, err = tx.ExecContext(
+		ctx,
+		`CREATE TABLE IF NOT EXISTS virtual_account_entries (
 			order_id TEXT PRIMARY KEY,
     		virtual_account_number TEXT NOT NULL,
 			amount INT NOT NULL,
@@ -49,7 +79,7 @@ func (r *Repository) Migrate(ctx context.Context) error {
 
 	_, err = tx.ExecContext(
 		ctx,
-		`CREATE INDEX IF NOT EXISTS idx_virtual_account_number ON virtual_accounts (virtual_account_number)`,
+		`CREATE INDEX IF NOT EXISTS idx_virtual_account_number ON virtual_account_entries (virtual_account_number)`,
 	)
 	if err != nil {
 		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
