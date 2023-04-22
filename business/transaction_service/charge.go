@@ -16,7 +16,7 @@ import (
 	"mock-payment-provider/repository"
 )
 
-func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) (business.ChargeResponse, error) {
+func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest) (business.ChargeResponse, error) {
 	// Validate the request payload
 	if err := ValidateChargeRequest(request); err != nil {
 		return business.ChargeResponse{}, err

@@ -10,7 +10,7 @@ import (
 	"mock-payment-provider/repository"
 )
 
-func (d Dependency) Cancel(ctx context.Context, orderId string) (business.CancelResponse, error) {
+func (d *Dependency) Cancel(ctx context.Context, orderId string) (business.CancelResponse, error) {
 	if orderId == "" {
 		return business.CancelResponse{}, fmt.Errorf("empty order id")
 	}

@@ -16,7 +16,12 @@ type EMoneyRepository interface {
 	// GetByID acquires the current entry of the specified ID.
 	// It returns ErrNotFound if the entry was not found.
 	// It returns ErrExpired if the ID is expired
-	GetByID(ctx context.Context, orderId string) (Entry, error)
+	GetByID(ctx context.Context, id string) (Entry, error)
+
+	// GetByOrderId acquires the current entry of the order ID.
+	// It returns ErrNotFound if the entry was not found.
+	// It returns ErrExpired if the ID is expired
+	GetByOrderId(ctx context.Context, orderId string) (Entry, error)
 
 	// CheckPaidStatus checks whether an ID is paid
 	CheckPaidStatus(ctx context.Context, orderId string) (paid bool, err error)

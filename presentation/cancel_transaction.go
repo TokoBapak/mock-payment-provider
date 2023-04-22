@@ -41,7 +41,6 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 				StatusCode:    http.StatusNotFound,
 				StatusMessage: "transaction not found",
 			})
-
 			if e != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -59,7 +58,6 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 			StatusCode:    http.StatusInternalServerError,
 			StatusMessage: "internal server error",
 		})
-
 		if e != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

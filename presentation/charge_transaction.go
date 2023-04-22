@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"mock-payment-provider/business"
@@ -163,11 +165,11 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 			if err, ok := err.(*business.RequestValidationError); ok {
-				for _, val := range err.Issues {
+				for _, issue := range err.Issues {
 					validationError.Issues = append(validationError.Issues, schema.ValidationIssue{
-						Field:   val.Field,
-						Code:    val.Code.String(),
-						Message: fmt.Sprintf("%s %s", val.Field, val.Message),
+						Field:   issue.Field,
+						Code:    issue.Code.String(),
+						Message: fmt.Sprintf("%s %s", issue.Field, issue.Message),
 					})
 				}
 
@@ -206,16 +208,16 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		responseBody, err := json.Marshal(schema.GopayChargeSuccessResponse{
 			StatusCode:             "", // TODO: fill these
 			StatusMessage:          "",
-			TransactionId:          "",
-			OrderId:                "",
-			GrossAmount:            "",
-			PaymentType:            "",
-			TransactionTime:        "",
-			TransactionStatus:      "",
+			TransactionId:          chargeResponse.OrderId,
+			OrderId:                chargeResponse.OrderId,
+			GrossAmount:            strconv.FormatInt(chargeResponse.TransactionAmount, 10),
+			PaymentType:            chargeResponse.PaymentType.ToPaymentMethod(),
+			TransactionTime:        chargeResponse.TransactionTime.Format(time.DateTime),
+			TransactionStatus:      chargeResponse.TransactionStatus.String(),
 			Actions:                nil,
 			ChannelResponseCode:    "",
 			ChannelResponseMessage: "",
-			Currency:               "",
+			Currency:               "IDR",
 		})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -232,15 +234,15 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			StatusMessage:          "",
 			ChannelResponseCode:    "",
 			ChannelResponseMessage: "",
-			TransactionId:          "",
-			OrderId:                "",
+			TransactionId:          chargeResponse.OrderId,
+			OrderId:                chargeResponse.OrderId,
 			MerchantId:             "",
-			GrossAmount:            "",
-			Currency:               "",
-			PaymentType:            "",
-			TransactionTime:        "",
-			TransactionStatus:      "",
-			FraudStatus:            "",
+			GrossAmount:            strconv.FormatInt(chargeResponse.TransactionAmount, 10),
+			Currency:               "IDR",
+			PaymentType:            chargeResponse.PaymentType.ToPaymentMethod(),
+			TransactionTime:        chargeResponse.TransactionTime.Format(time.DateTime),
+			TransactionStatus:      chargeResponse.TransactionStatus.String(),
+			FraudStatus:            "accept",
 			Actions:                nil,
 		})
 		if err != nil {
@@ -256,16 +258,16 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		responseBody, err := json.Marshal(schema.QRISChargeSuccessResponse{
 			StatusCode:        "", // TODO: fill these
 			StatusMessage:     "",
-			TransactionId:     "",
-			OrderId:           "",
+			TransactionId:     chargeResponse.OrderId,
+			OrderId:           chargeResponse.OrderId,
 			MerchantId:        "",
-			GrossAmount:       "",
-			Currency:          "",
-			PaymentType:       "",
-			TransactionTime:   "",
-			TransactionStatus: "",
-			FraudStatus:       "",
-			Acquirer:          "",
+			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
+			Currency:          "IDR",
+			PaymentType:       chargeResponse.PaymentType.ToPaymentMethod(),
+			TransactionTime:   chargeResponse.TransactionTime.Format(time.DateTime),
+			TransactionStatus: chargeResponse.TransactionStatus.String(),
+			FraudStatus:       "accept",
+			Acquirer:          "nobu",
 			Actions:           nil,
 		})
 		if err != nil {
@@ -281,15 +283,23 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		responseBody, err := json.Marshal(schema.BCAVirtualAccountChargeSuccessResponse{
 			StatusCode:        "", // TODO: fill these
 			StatusMessage:     "",
-			TransactionId:     "",
-			OrderId:           "",
-			GrossAmount:       "",
-			PaymentType:       "",
-			TransactionTime:   "",
-			TransactionStatus: "",
-			VaNumbers:         nil,
-			FraudStatus:       "",
-			Currency:          "",
+			TransactionId:     chargeResponse.OrderId,
+			OrderId:           chargeResponse.OrderId,
+			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
+			PaymentType:       chargeResponse.PaymentType.ToPaymentMethod(),
+			TransactionTime:   chargeResponse.TransactionTime.Format(time.DateTime),
+			TransactionStatus: chargeResponse.TransactionStatus.String(),
+			VaNumbers: []struct {
+				Bank     string `json:"bank"`
+				VaNumber string `json:"va_number"`
+			}{
+				{
+					Bank:     chargeResponse.VirtualAccountAction.Bank,
+					VaNumber: chargeResponse.VirtualAccountAction.VirtualAccountNumber,
+				},
+			},
+			FraudStatus: "accept",
+			Currency:    "IDR",
 		})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -304,15 +314,23 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		responseBody, err := json.Marshal(schema.BRIVirtualAccountChargeSuccessResponse{
 			StatusCode:        "", // TODO: fill these
 			StatusMessage:     "",
-			TransactionId:     "",
-			OrderId:           "",
-			GrossAmount:       "",
-			PaymentType:       "",
-			TransactionTime:   "",
-			TransactionStatus: "",
-			VaNumbers:         nil,
-			FraudStatus:       "",
-			Currency:          "",
+			TransactionId:     chargeResponse.OrderId,
+			OrderId:           chargeResponse.OrderId,
+			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
+			PaymentType:       chargeResponse.PaymentType.ToPaymentMethod(),
+			TransactionTime:   chargeResponse.TransactionTime.Format(time.DateTime),
+			TransactionStatus: chargeResponse.TransactionStatus.String(),
+			VaNumbers: []struct {
+				Bank     string `json:"bank"`
+				VaNumber string `json:"va_number"`
+			}{
+				{
+					Bank:     chargeResponse.VirtualAccountAction.Bank,
+					VaNumber: chargeResponse.VirtualAccountAction.VirtualAccountNumber,
+				},
+			},
+			FraudStatus: "accept",
+			Currency:    "IDR",
 		})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -327,15 +345,23 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		responseBody, err := json.Marshal(schema.BNIVirtualAccountChargeSuccessResponse{
 			StatusCode:        "", // TODO: fill these
 			StatusMessage:     "",
-			TransactionId:     "",
-			OrderId:           "",
-			GrossAmount:       "",
-			PaymentType:       "",
-			TransactionTime:   "",
-			TransactionStatus: "",
-			VaNumbers:         nil,
-			FraudStatus:       "",
-			Currency:          "",
+			TransactionId:     chargeResponse.OrderId,
+			OrderId:           chargeResponse.OrderId,
+			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
+			PaymentType:       chargeResponse.PaymentType.ToPaymentMethod(),
+			TransactionTime:   chargeResponse.TransactionTime.Format(time.DateTime),
+			TransactionStatus: chargeResponse.TransactionStatus.String(),
+			VaNumbers: []struct {
+				Bank     string `json:"bank"`
+				VaNumber string `json:"va_number"`
+			}{
+				{
+					Bank:     chargeResponse.VirtualAccountAction.Bank,
+					VaNumber: chargeResponse.VirtualAccountAction.VirtualAccountNumber,
+				},
+			},
+			FraudStatus: "accept",
+			Currency:    "IDR",
 		})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -350,14 +376,14 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		responseBody, err := json.Marshal(schema.PermataVirtualAccountChargeSuccessResponse{
 			StatusCode:        "", // TODO: fill these
 			StatusMessage:     "",
-			TransactionId:     "",
-			OrderId:           "",
-			GrossAmount:       "",
-			PaymentType:       "",
-			TransactionTime:   "",
-			TransactionStatus: "",
-			FraudStatus:       "",
-			PermataVaNumber:   "",
+			TransactionId:     chargeResponse.OrderId,
+			OrderId:           chargeResponse.OrderId,
+			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
+			PaymentType:       chargeResponse.PaymentType.ToPaymentMethod(),
+			TransactionTime:   chargeResponse.TransactionTime.Format(time.DateTime),
+			TransactionStatus: chargeResponse.TransactionStatus.String(),
+			FraudStatus:       "accept",
+			PermataVaNumber:   chargeResponse.VirtualAccountAction.VirtualAccountNumber,
 		})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

@@ -2,10 +2,14 @@ package presentation
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 )
 
@@ -29,5 +33,59 @@ func (p *Presenter) ExpireTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO
+	// Call business logic
+	expireResponse, err := p.transactionService.Expire(r.Context(), orderId)
+	if err != nil {
+		if errors.Is(err, business.ErrTransactionNotFound) {
+			responseBody, e := json.Marshal(schema.Error{
+				StatusCode:    http.StatusNotFound,
+				StatusMessage: "transaction not found",
+			})
+			if e != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(responseBody)
+			w.Header().Set("Content-Type", "application/json")
+			return
+		}
+
+		// TODO: send to logger
+
+		responseBody, e := json.Marshal(schema.Error{
+			StatusCode:    http.StatusInternalServerError,
+			StatusMessage: "internal server error",
+		})
+		if e != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(responseBody)
+
+		return
+	}
+
+	responseBody, err := json.Marshal(schema.ExpireTransactionResponse{
+		StatusCode:        "200",
+		StatusMessage:     "",
+		TransactionId:     expireResponse.OrderId,
+		OrderId:           expireResponse.OrderId,
+		PaymentType:       expireResponse.PaymentType.ToPaymentMethod(),
+		TransactionTime:   expireResponse.TransactionTime.Format(time.DateTime),
+		TransactionStatus: expireResponse.TransactionStatus.String(),
+		GrossAmount:       strconv.FormatInt(expireResponse.TransactionAmount, 10),
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseBody)
 }

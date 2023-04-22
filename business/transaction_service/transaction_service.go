@@ -33,7 +33,9 @@ func NewTransactionService(dependency Dependency) (*Dependency, error) {
 	}
 
 	return &Dependency{
-		TransactionRepository: dependency.TransactionRepository,
-		WebhookClient:         dependency.WebhookClient,
+		TransactionRepository:    dependency.TransactionRepository,
+		WebhookClient:            dependency.WebhookClient,
+		VirtualAccountRepository: dependency.VirtualAccountRepository,
+		EMoneyRepository:         dependency.EMoneyRepository,
 	}, nil
 }

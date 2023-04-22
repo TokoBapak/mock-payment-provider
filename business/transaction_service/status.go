@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"mock-payment-provider/business"
 	"mock-payment-provider/repository"
 )
 
-func (d Dependency) GetStatus(ctx context.Context, orderId string) (business.GetStatusResponse, error) {
+func (d *Dependency) GetStatus(ctx context.Context, orderId string) (business.GetStatusResponse, error) {
 	if orderId == "" {
 		return business.GetStatusResponse{}, fmt.Errorf("empty order id")
 	}
