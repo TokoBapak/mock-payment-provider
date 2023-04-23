@@ -81,7 +81,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 
 		go func() {
 			// Send a PENDING webhook
-			payload, err := buildPendingWebhookMessage(pendingWebhookParameters{
+			payload, err := d.buildPendingWebhookMessage(pendingWebhookParameters{
 				TransactionTime:      transactionTime,
 				GrossAmount:          totalAmount,
 				OrderId:              request.OrderId,
@@ -132,7 +132,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 			// Send webhook
 			ctx = context.Background()
 
-			payload, err := buildExpiredWebhookMessage(expiredWebhookParameters{
+			payload, err := d.buildExpiredWebhookMessage(expiredWebhookParameters{
 				TransactionTime: transactionTime,
 				GrossAmount:     totalAmount,
 				OrderId:         request.OrderId,
@@ -198,7 +198,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 		}
 
 		go func() {
-			payload, err := buildPendingWebhookMessage(pendingWebhookParameters{
+			payload, err := d.buildPendingWebhookMessage(pendingWebhookParameters{
 				TransactionTime:      transactionTime,
 				GrossAmount:          totalAmount,
 				OrderId:              request.OrderId,
@@ -249,7 +249,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 			// Send webhook
 			ctx = context.Background()
 
-			payload, err := buildExpiredWebhookMessage(expiredWebhookParameters{
+			payload, err := d.buildExpiredWebhookMessage(expiredWebhookParameters{
 				TransactionTime: transactionTime,
 				GrossAmount:     totalAmount,
 				OrderId:         request.OrderId,
@@ -319,7 +319,7 @@ func ValidateChargeRequest(request business.ChargeRequest) *business.RequestVali
 		})
 	}
 
-	// valdiate transaction.amount
+	// validate transaction.amount
 	if request.TransactionAmount <= 0 {
 		issues = append(issues, business.RequestValidationIssue{
 			Code:    business.RequestValidationCodeInvalidValue,
@@ -493,7 +493,7 @@ func ValidateChargeRequest(request business.ChargeRequest) *business.RequestVali
 		}
 	}
 
-	// validate customer.bliing_address.address
+	// validate customer.billing_address.address
 	if request.Customer.BillingAddress.Address == "" {
 		issues = append(issues, business.RequestValidationIssue{
 			Code:    business.RequestValidationCodeRequired,
@@ -694,7 +694,7 @@ func ValidateChargeRequest(request business.ChargeRequest) *business.RequestVali
 			})
 		}
 
-		// validate itmes.quantity
+		// validate items.quantity
 		if item.Quantity <= 0 {
 			issues = append(issues, business.RequestValidationIssue{
 				Code:    business.RequestValidationCodeInvalidValue,
@@ -754,9 +754,8 @@ type pendingWebhookParameters struct {
 	VirtualAccountNumber string
 }
 
-func buildPendingWebhookMessage(parameters pendingWebhookParameters) ([]byte, error) {
-	// TODO: should we include server key?
-	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, "")
+func (d *Dependency) buildPendingWebhookMessage(parameters pendingWebhookParameters) ([]byte, error) {
+	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, d.ServerKey)
 	switch parameters.PaymentType {
 	case primitive.PaymentTypeVirtualAccountBCA:
 		return json.Marshal(schema.BCAVirtualAccountChargePendingResponse{
@@ -893,9 +892,9 @@ type expiredWebhookParameters struct {
 	PaymentType     primitive.PaymentType
 }
 
-func buildExpiredWebhookMessage(parameters expiredWebhookParameters) ([]byte, error) {
-	// TODO: should we include server key?
-	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, "")
+func (d *Dependency) buildExpiredWebhookMessage(parameters expiredWebhookParameters) ([]byte, error) {
+	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, d.ServerKey)
+
 	switch parameters.PaymentType {
 	case primitive.PaymentTypeVirtualAccountBCA:
 		return json.Marshal(schema.BCAVirtualAccountChargeExpiredResponse{

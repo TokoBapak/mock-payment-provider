@@ -7,6 +7,7 @@ import (
 )
 
 type Dependency struct {
+	ServerKey                string
 	TransactionRepository    repository.TransactionRepository
 	WebhookClient            repository.WebhookClient
 	VirtualAccountRepository repository.VirtualAccountRepository
@@ -33,6 +34,7 @@ func NewTransactionService(dependency Dependency) (*Dependency, error) {
 	}
 
 	return &Dependency{
+		ServerKey:                dependency.ServerKey,
 		TransactionRepository:    dependency.TransactionRepository,
 		WebhookClient:            dependency.WebhookClient,
 		VirtualAccountRepository: dependency.VirtualAccountRepository,

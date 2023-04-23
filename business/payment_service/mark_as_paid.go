@@ -80,7 +80,7 @@ func (d *Dependency) MarkAsPaid(ctx context.Context, orderId string, paymentMeth
 	}
 
 	go func() {
-		payload, err := buildSettlementMessage(settlementMessageParameters{
+		payload, err := d.buildSettlementMessage(settlementMessageParameters{
 			PaymentType:          paymentMethod,
 			OrderId:              orderId,
 			TransactionTime:      transaction.TransactionTime,
@@ -113,9 +113,8 @@ type settlementMessageParameters struct {
 	VirtualAccountNumber string
 }
 
-func buildSettlementMessage(parameters settlementMessageParameters) ([]byte, error) {
-	// TODO: should we include server key?
-	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, "")
+func (d *Dependency) buildSettlementMessage(parameters settlementMessageParameters) ([]byte, error) {
+	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, d.serverKey)
 
 	switch parameters.PaymentType {
 	case primitive.PaymentTypeVirtualAccountBCA:
