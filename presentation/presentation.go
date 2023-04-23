@@ -13,6 +13,7 @@ import (
 
 type Presenter struct {
 	transactionService business.Transaction
+	paymentService     business.Payment
 }
 
 type Dependency struct {
@@ -32,6 +33,12 @@ func NewPresenter(config PresenterConfig) (*http.Server, error) {
 	router := chi.NewRouter()
 
 	router.Get("/", presenter.Index)
+
+	// Internal routes
+	router.Post("/internal/mark-as-paid", presenter.InternalMarkAsPaid)
+	router.Get("/internal/transaction-detail", presenter.InternalTransactionDetail)
+
+	// External routes
 	router.Post("/charge", presenter.ChargeTransaction)
 	router.Post("/{order_id}/cancel", presenter.CancelTransaction)
 	router.Get("/{order_id}/status", presenter.GetTransactionStatus)

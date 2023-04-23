@@ -46,6 +46,10 @@ func (d *Dependency) MarkAsPaid(ctx context.Context, orderId string, paymentMeth
 
 	var virtualAccountNumber = ""
 
+	if paymentMethod == primitive.PaymentTypeUnspecified {
+		paymentMethod = transaction.PaymentType
+	}
+
 	switch paymentMethod {
 	case primitive.PaymentTypeVirtualAccountBCA:
 		fallthrough
