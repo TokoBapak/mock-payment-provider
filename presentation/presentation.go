@@ -18,6 +18,7 @@ type Presenter struct {
 
 type Dependency struct {
 	TransactionService business.Transaction
+	PaymentService     business.Payment
 }
 type PresenterConfig struct {
 	Hostname   string
@@ -26,8 +27,9 @@ type PresenterConfig struct {
 }
 
 func NewPresenter(config PresenterConfig) (*http.Server, error) {
-	presenter := Presenter{
+	presenter := &Presenter{
 		transactionService: config.Dependency.TransactionService,
+		paymentService:     config.Dependency.PaymentService,
 	}
 
 	router := chi.NewRouter()

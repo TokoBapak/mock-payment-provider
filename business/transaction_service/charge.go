@@ -43,7 +43,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 	case primitive.PaymentTypeVirtualAccountBNI:
 		// Create new transaction
 		expiredAt := time.Now().Add(time.Hour * 24)
-		err := d.TransactionRepository.Create(
+		err := d.transactionRepository.Create(
 			ctx,
 			repository.CreateTransactionParam{
 				OrderID:     request.OrderId,
@@ -62,13 +62,13 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 		}
 
 		// Acquire virtual account number from customer email
-		virtualAccountNumber, err := d.VirtualAccountRepository.CreateOrGetVirtualAccountNumber(ctx, request.Customer.Email)
+		virtualAccountNumber, err := d.virtualAccountRepository.CreateOrGetVirtualAccountNumber(ctx, request.Customer.Email)
 		if err != nil {
 			return business.ChargeResponse{}, fmt.Errorf("acquiring virtual account number for %s: %w", request.Customer.Email, err)
 		}
 
 		// Create a virtual account entry
-		_, err = d.VirtualAccountRepository.CreateCharge(
+		_, err = d.virtualAccountRepository.CreateCharge(
 			ctx,
 			virtualAccountNumber,
 			request.OrderId,
@@ -98,7 +98,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 
 			ctx := context.Background()
 
-			err = d.WebhookClient.Send(ctx, payload)
+			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
 				// TODO: properly log errors
 			}
@@ -111,7 +111,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
 
-			transaction, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
+			transaction, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 			if err != nil {
 				// TODO: properly log errors
 				return
@@ -123,7 +123,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 			}
 
 			// Update transaction status to expired
-			err = d.TransactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
+			err = d.transactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
 			if err != nil {
 				// TODO: properly log errors
 				return
@@ -143,7 +143,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 				return
 			}
 
-			err = d.WebhookClient.Send(ctx, payload)
+			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
 				// TODO: properly log errors
 			}
@@ -168,7 +168,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 	case primitive.PaymentTypeEMoneyShopeePay:
 		// Create new transaction
 		expiredAt := time.Now().Add(time.Hour * 3)
-		err := d.TransactionRepository.Create(
+		err := d.transactionRepository.Create(
 			ctx,
 			repository.CreateTransactionParam{
 				OrderID:     request.OrderId,
@@ -187,7 +187,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 		}
 
 		// Create e-money entry
-		id, err := d.EMoneyRepository.CreateCharge(
+		id, err := d.emoneyRepository.CreateCharge(
 			ctx,
 			request.OrderId,
 			request.TransactionAmount,
@@ -215,7 +215,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 
 			ctx := context.Background()
 
-			err = d.WebhookClient.Send(ctx, payload)
+			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
 				// TODO: properly log errors
 			}
@@ -228,7 +228,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
 
-			transaction, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
+			transaction, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 			if err != nil {
 				// TODO: properly log errors
 				return
@@ -240,7 +240,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 			}
 
 			// Update transaction status to expired
-			err = d.TransactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
+			err = d.transactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
 			if err != nil {
 				// TODO: properly log errors
 				return
@@ -260,7 +260,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 				return
 			}
 
-			err = d.WebhookClient.Send(ctx, payload)
+			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
 				// TODO: properly log errors
 			}
@@ -755,7 +755,7 @@ type pendingWebhookParameters struct {
 }
 
 func (d *Dependency) buildPendingWebhookMessage(parameters pendingWebhookParameters) ([]byte, error) {
-	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, d.ServerKey)
+	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, d.serverKey)
 	switch parameters.PaymentType {
 	case primitive.PaymentTypeVirtualAccountBCA:
 		return json.Marshal(schema.BCAVirtualAccountChargePendingResponse{
@@ -893,7 +893,7 @@ type expiredWebhookParameters struct {
 }
 
 func (d *Dependency) buildExpiredWebhookMessage(parameters expiredWebhookParameters) ([]byte, error) {
-	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, d.ServerKey)
+	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, d.serverKey)
 
 	switch parameters.PaymentType {
 	case primitive.PaymentTypeVirtualAccountBCA:

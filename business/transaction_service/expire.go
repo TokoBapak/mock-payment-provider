@@ -16,7 +16,7 @@ func (d *Dependency) Expire(ctx context.Context, orderId string) (business.Expir
 	}
 
 	// Check for transaction status. If it's cancelled before or expired, then we shouldn't cancel it
-	transactionStatus, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
+	transactionStatus, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return business.ExpireResponse{}, business.ErrTransactionNotFound
@@ -31,7 +31,7 @@ func (d *Dependency) Expire(ctx context.Context, orderId string) (business.Expir
 	}
 
 	// Cancel the transaction
-	err = d.TransactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
+	err = d.transactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
 	if err != nil {
 		return business.ExpireResponse{}, fmt.Errorf("modifying the transaction status to canceled: %w", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"mock-payment-provider/repository"
 )
 
-type Dependency struct {
+type Config struct {
 	ServerKey                string
 	TransactionRepository    repository.TransactionRepository
 	WebhookClient            repository.WebhookClient
@@ -14,30 +14,38 @@ type Dependency struct {
 	EMoneyRepository         repository.EMoneyRepository
 }
 
+type Dependency struct {
+	serverKey                string
+	transactionRepository    repository.TransactionRepository
+	webhookClient            repository.WebhookClient
+	virtualAccountRepository repository.VirtualAccountRepository
+	emoneyRepository         repository.EMoneyRepository
+}
+
 // NewTransactionService validates input from Dependency and return an error if
 // any of it is nil. It implements business.Transaction interface.
-func NewTransactionService(dependency Dependency) (*Dependency, error) {
-	if dependency.TransactionRepository == nil {
+func NewTransactionService(config Config) (*Dependency, error) {
+	if config.TransactionRepository == nil {
 		return &Dependency{}, fmt.Errorf("nil transaction repository")
 	}
 
-	if dependency.WebhookClient == nil {
+	if config.WebhookClient == nil {
 		return &Dependency{}, fmt.Errorf("nil webhook client")
 	}
 
-	if dependency.VirtualAccountRepository == nil {
+	if config.VirtualAccountRepository == nil {
 		return &Dependency{}, fmt.Errorf("nil virtual account repository")
 	}
 
-	if dependency.EMoneyRepository == nil {
+	if config.EMoneyRepository == nil {
 		return &Dependency{}, fmt.Errorf("nil emoney repository")
 	}
 
 	return &Dependency{
-		ServerKey:                dependency.ServerKey,
-		TransactionRepository:    dependency.TransactionRepository,
-		WebhookClient:            dependency.WebhookClient,
-		VirtualAccountRepository: dependency.VirtualAccountRepository,
-		EMoneyRepository:         dependency.EMoneyRepository,
+		serverKey:                config.ServerKey,
+		transactionRepository:    config.TransactionRepository,
+		webhookClient:            config.WebhookClient,
+		virtualAccountRepository: config.VirtualAccountRepository,
+		emoneyRepository:         config.EMoneyRepository,
 	}, nil
 }

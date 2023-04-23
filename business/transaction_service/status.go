@@ -14,7 +14,7 @@ func (d *Dependency) GetStatus(ctx context.Context, orderId string) (business.Ge
 		return business.GetStatusResponse{}, fmt.Errorf("empty order id")
 	}
 
-	transaction, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
+	transaction, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return business.GetStatusResponse{}, business.ErrTransactionNotFound
