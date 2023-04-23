@@ -23,9 +23,6 @@ type EMoneyRepository interface {
 	// It returns ErrExpired if the ID is expired
 	GetByOrderId(ctx context.Context, orderId string) (Entry, error)
 
-	// CheckPaidStatus checks whether an ID is paid
-	CheckPaidStatus(ctx context.Context, orderId string) (paid bool, err error)
-
 	// CancelCharge cancels a charge for the specified ID.
 	CancelCharge(ctx context.Context, orderId string) error
 
