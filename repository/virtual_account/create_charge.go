@@ -63,7 +63,13 @@ func (r *Repository) CreateCharge(ctx context.Context, virtualAccountNumber stri
 
 	_, err = tx.ExecContext(
 		ctx,
-		`UPDATE virtual_accounts SET current_order_id = ? AND updated_at = CURRENT_TIMESTAMP WHERE virtual_account_number = ?`,
+		`UPDATE OR FAIL
+    		virtual_accounts
+		SET
+		    current_order_id = ?,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE
+		    virtual_account_number = ?`,
 		orderId,
 		virtualAccountNumber,
 	)
@@ -84,5 +90,5 @@ func (r *Repository) CreateCharge(ctx context.Context, virtualAccountNumber stri
 		return "", fmt.Errorf("commiting transaction: %w", err)
 	}
 
-	return "", nil
+	return virtualAccountNumber, nil
 }

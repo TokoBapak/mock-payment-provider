@@ -21,6 +21,8 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Opening sql database: %s", err.Error())
 	}
 
+	db.SetMaxOpenConns(1)
+
 	setupCtx, setupCancel := context.WithTimeout(context.Background(), time.Minute)
 	defer setupCancel()
 

@@ -48,13 +48,13 @@ func TestRepository_GetChargedAmount(t *testing.T) {
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
-		_, err = virtualAccountRepository.GetChargedAmount(ctx, number)
-		if err == nil {
-			t.Errorf("expecting an error, got nil")
+		chargedAmount, err := virtualAccountRepository.GetChargedAmount(ctx, number)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err.Error())
 		}
 
-		if !errors.Is(err, repository.ErrNotFound) {
-			t.Errorf("expecting repository.ErrNotFound, instead got %v", err)
+		if chargedAmount != 0 {
+			t.Errorf("expecting chargeAmount to be 0, instead got %d", chargedAmount)
 		}
 	})
 

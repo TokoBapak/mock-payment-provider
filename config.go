@@ -40,6 +40,6 @@ func parseConfig() config {
 	if v, ok := os.LookupEnv("SERVER_KEY"); ok {
 		result.serverKey = v
 	}
-	
+
 	return result
 }
