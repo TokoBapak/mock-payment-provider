@@ -53,23 +53,26 @@ func (r *Repository) GetChargedAmount(ctx context.Context, virtualAccountNumber 
 	}
 
 	var chargedAmount int64
-	err = tx.QueryRowContext(
-		ctx,
-		`SELECT amount FROM virtual_account_entries WHERE order_id = ?`,
-		currentOrderId.String,
-	).Scan(
-		&chargedAmount,
-	)
-	if err != nil {
-		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
-			return 0, fmt.Errorf("rolling back transaction: %w", err)
-		}
+	// Only query if it's not NULL.
+	if currentOrderId.Valid {
+		err := tx.QueryRowContext(
+			ctx,
+			`SELECT amount FROM virtual_account_entries WHERE order_id = ?`,
+			currentOrderId.String,
+		).Scan(
+			&chargedAmount,
+		)
+		if err != nil {
+			if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
+				return 0, fmt.Errorf("rolling back transaction: %w", err)
+			}
 
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, repository.ErrNotFound
-		}
+			if errors.Is(err, sql.ErrNoRows) {
+				return 0, repository.ErrNotFound
+			}
 
-		return 0, fmt.Errorf("executing query: %w", err)
+			return 0, fmt.Errorf("executing query: %w", err)
+		}
 	}
 
 	err = tx.Commit()
