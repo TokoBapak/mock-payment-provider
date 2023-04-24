@@ -37,16 +37,33 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 	cancelResponse, err := p.transactionService.Cancel(r.Context(), orderId)
 	if err != nil {
 		if errors.Is(err, business.ErrTransactionNotFound) {
+			responseBody, err := json.Marshal(schema.Error{
+				StatusCode:    404,
+				StatusMessage: "Transaction doesn't exist.",
+				Id:            uuid.NewString(),
+			})
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(responseBody)
+			return
+		}
+
+		if errors.Is(err, business.ErrCannotModifyStatus) {
 			responseBody, e := json.Marshal(schema.Error{
-				StatusCode:    http.StatusNotFound,
-				StatusMessage: "transaction not found",
+				StatusCode:    412,
+				StatusMessage: "Merchant cannot modify the status of the transaction",
 			})
 			if e != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusOK)
 			w.Write(responseBody)
 			w.Header().Set("Content-Type", "application/json")
 			return

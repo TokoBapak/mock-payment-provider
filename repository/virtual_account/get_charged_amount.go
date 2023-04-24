@@ -34,7 +34,7 @@ func (r *Repository) GetChargedAmount(ctx context.Context, virtualAccountNumber 
 		return 0, fmt.Errorf("creating transaction: %w", err)
 	}
 
-	var currentOrderId string
+	var currentOrderId sql.NullString
 	err = tx.QueryRowContext(
 		ctx,
 		`SELECT current_order_id FROM virtual_accounts WHERE virtual_account_number = ?`,
@@ -56,7 +56,7 @@ func (r *Repository) GetChargedAmount(ctx context.Context, virtualAccountNumber 
 	err = tx.QueryRowContext(
 		ctx,
 		`SELECT amount FROM virtual_account_entries WHERE order_id = ?`,
-		currentOrderId,
+		currentOrderId.String,
 	).Scan(
 		&chargedAmount,
 	)

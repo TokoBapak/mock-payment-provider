@@ -77,8 +77,9 @@ func main() {
 	}
 
 	httpServer, err := presentation.NewPresenter(presentation.PresenterConfig{
-		Hostname: cfg.httpHostname,
-		Port:     cfg.httpPort,
+		Hostname:  cfg.httpHostname,
+		Port:      cfg.httpPort,
+		ServerKey: cfg.serverKey,
 		Dependency: &presentation.Dependency{
 			TransactionService: transactionService,
 			PaymentService:     paymentService,

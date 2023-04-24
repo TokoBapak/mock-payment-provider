@@ -1,11 +1,13 @@
 package presentation
 
 import (
+	"encoding/json"
 	"net"
 	"net/http"
 	"time"
 
 	"mock-payment-provider/business"
+	"mock-payment-provider/presentation/schema"
 	"mock-payment-provider/primitive"
 
 	"github.com/go-chi/chi/v5"
@@ -23,6 +25,7 @@ type Dependency struct {
 type PresenterConfig struct {
 	Hostname   string
 	Port       string
+	ServerKey  string
 	Dependency *Dependency
 }
 
@@ -39,6 +42,30 @@ func NewPresenter(config PresenterConfig) (*http.Server, error) {
 	// Internal routes
 	router.Post("/internal/mark-as-paid", presenter.InternalMarkAsPaid)
 	router.Get("/internal/transaction-detail", presenter.InternalTransactionDetail)
+
+	// Apply authorization middleware
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, _, ok := r.BasicAuth()
+			if !ok || user != config.ServerKey {
+				responseBody, err := json.Marshal(schema.Error{
+					StatusCode:    401,
+					StatusMessage: "Transaction cannot be authorized with the current client/server key.",
+				})
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write(responseBody)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	// External routes
 	router.Post("/charge", presenter.ChargeTransaction)

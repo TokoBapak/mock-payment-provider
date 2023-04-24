@@ -1,8 +1,9 @@
 package signature_test
 
 import (
-	"mock-payment-provider/repository/signature"
 	"testing"
+
+	"mock-payment-provider/repository/signature"
 )
 
 func TestGenerate(t *testing.T) {
