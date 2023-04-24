@@ -30,7 +30,7 @@ func (r *Repository) Migrate(ctx context.Context) error {
 
 	_, err = tx.ExecContext(
 		ctx,
-		`CREATE TABLE virtual_accounts (
+		`CREATE TABLE IF NOT EXISTS virtual_accounts (
     		unique_identifier TEXT PRIMARY KEY,
     		virtual_account_number TEXT NOT NULL,
     		current_order_id TEXT NULL,
