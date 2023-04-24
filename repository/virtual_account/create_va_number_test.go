@@ -11,7 +11,7 @@ import (
 func TestRepository_CreateOrGetVirtualAccountNumber(t *testing.T) {
 	virtualAccountRepository, err := virtual_account.NewVirtualAccountRepository(db)
 	if err != nil {
-		t.Fatal("creating virtual account repository: %s", err.Error())
+		t.Fatalf("creating virtual account repository: %s", err.Error())
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
