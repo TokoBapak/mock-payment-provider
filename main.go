@@ -89,6 +89,25 @@ func main() {
 		log.Fatalf("creating new presenter: %s", err.Error())
 	}
 
+	// Migrate repositories on startup
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	err = transactionRepository.Migrate(ctx)
+	if err != nil {
+		log.Fatalf("migrating transaction repository: %s", err.Error())
+	}
+
+	err = virtualAccountRepository.Migrate(ctx)
+	if err != nil {
+		log.Fatalf("migrating virtual account repository: %s", err.Error())
+	}
+
+	err = emoneyRepository.Migrate(ctx)
+	if err != nil {
+		log.Fatalf("migrating emoney repository: %s", err.Error())
+	}
+
 	exitSignal := make(chan os.Signal, 1)
 	signal.Notify(exitSignal, os.Interrupt)
 

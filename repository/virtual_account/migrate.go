@@ -48,7 +48,7 @@ func (r *Repository) Migrate(ctx context.Context) error {
 
 	_, err = tx.ExecContext(
 		ctx,
-		`CREATE UNIQUE INDEX IF NOT EXISTS unq_virtual_accounts_va_number ON virtual_accounts (virtual_account_numbers)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS unq_virtual_accounts_va_number ON virtual_accounts (virtual_account_number)`,
 	)
 	if err != nil {
 		if e := tx.Rollback(); e != nil && !errors.Is(err, sql.ErrTxDone) {
