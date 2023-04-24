@@ -212,7 +212,7 @@ func (d *Dependency) buildSettlementMessage(parameters settlementMessageParamete
 		})
 	case primitive.PaymentTypeEMoneyQRIS:
 		return json.Marshal(schema.QRISChargeSettlementResponse{
-			TransactionType:          "",
+			TransactionType:          "on-us",
 			TransactionTime:          parameters.TransactionTime.Format(time.DateTime),
 			TransactionStatus:        primitive.TransactionStatusSettled.String(),
 			TransactionId:            parameters.OrderId,
@@ -222,8 +222,8 @@ func (d *Dependency) buildSettlementMessage(parameters settlementMessageParamete
 			SettlementTime:           time.Now().Format(time.DateTime),
 			PaymentType:              parameters.PaymentType.ToPaymentMethod(),
 			OrderId:                  parameters.OrderId,
-			MerchantId:               "",
-			Issuer:                   "",
+			MerchantId:               "MOCK",
+			Issuer:                   "nobu",
 			GrossAmount:              strconv.FormatInt(parameters.GrossAmount, 10),
 			FraudStatus:              "accept",
 			Currency:                 "IDR",
@@ -254,7 +254,7 @@ func (d *Dependency) buildSettlementMessage(parameters settlementMessageParamete
 			SettlementTime:           time.Now().Format(time.DateTime),
 			PaymentType:              parameters.PaymentType.ToPaymentMethod(),
 			OrderId:                  parameters.OrderId,
-			MerchantId:               "",
+			MerchantId:               "MOCK",
 			GrossAmount:              strconv.FormatInt(parameters.GrossAmount, 10),
 			FraudStatus:              "accept",
 			Currency:                 "IDR",

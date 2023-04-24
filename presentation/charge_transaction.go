@@ -202,33 +202,39 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var emoneyActions []struct {
+		Name   string `json:"name"`
+		Method string `json:"method"`
+		Url    string `json:"url"`
+	}
+
+	for _, emoneyAction := range chargeResponse.EMoneyAction {
+		emoneyActions = append(emoneyActions, struct {
+			Name   string `json:"name"`
+			Method string `json:"method"`
+			Url    string `json:"url"`
+		}{
+			Name:   emoneyAction.EMoneyActionType.String(),
+			Method: emoneyAction.Method,
+			Url:    emoneyAction.URL,
+		})
+	}
+
 	// Send return output to the client
 	switch chargeResponse.PaymentType {
 	case primitive.PaymentTypeEMoneyGopay:
 		responseBody, err := json.Marshal(schema.GopayChargeSuccessResponse{
-			StatusCode:        "", // TODO: fill these
-			StatusMessage:     "",
-			TransactionId:     chargeResponse.OrderId,
-			OrderId:           chargeResponse.OrderId,
-			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
-			PaymentType:       chargeResponse.PaymentType.ToPaymentMethod(),
-			TransactionTime:   chargeResponse.TransactionTime.Format(time.DateTime),
-			TransactionStatus: chargeResponse.TransactionStatus.String(),
-			Actions: []struct {
-				Name   string        `json:"name"`
-				Method string        `json:"method"`
-				Url    string        `json:"url"`
-				Fields []interface{} `json:"fields,omitempty"`
-			}{
-				{
-					Name:   "",
-					Method: "",
-					Url:    "",
-					Fields: nil,
-				},
-			},
-			ChannelResponseCode:    "",
-			ChannelResponseMessage: "",
+			StatusCode:             "201",
+			StatusMessage:          "GO-PAY billing created",
+			TransactionId:          chargeResponse.OrderId,
+			OrderId:                chargeResponse.OrderId,
+			GrossAmount:            strconv.FormatInt(chargeResponse.TransactionAmount, 10),
+			PaymentType:            chargeResponse.PaymentType.ToPaymentMethod(),
+			TransactionTime:        chargeResponse.TransactionTime.Format(time.DateTime),
+			TransactionStatus:      chargeResponse.TransactionStatus.String(),
+			Actions:                emoneyActions,
+			ChannelResponseCode:    "200",
+			ChannelResponseMessage: "Success",
 			Currency:               "IDR",
 		})
 		if err != nil {
@@ -242,20 +248,20 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	case primitive.PaymentTypeEMoneyShopeePay:
 		responseBody, err := json.Marshal(schema.ShopeePayChargeSuccessResponse{
-			StatusCode:             "", // TODO: fill these
-			StatusMessage:          "",
-			ChannelResponseCode:    "",
-			ChannelResponseMessage: "",
+			StatusCode:             "201",
+			StatusMessage:          "ShopeePay transaction is created",
+			ChannelResponseCode:    "0",
+			ChannelResponseMessage: "success",
 			TransactionId:          chargeResponse.OrderId,
 			OrderId:                chargeResponse.OrderId,
-			MerchantId:             "",
+			MerchantId:             "MOCK",
 			GrossAmount:            strconv.FormatInt(chargeResponse.TransactionAmount, 10),
 			Currency:               "IDR",
 			PaymentType:            chargeResponse.PaymentType.ToPaymentMethod(),
 			TransactionTime:        chargeResponse.TransactionTime.Format(time.DateTime),
 			TransactionStatus:      chargeResponse.TransactionStatus.String(),
 			FraudStatus:            "accept",
-			Actions:                nil,
+			Actions:                emoneyActions,
 		})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -268,11 +274,11 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	case primitive.PaymentTypeEMoneyQRIS:
 		responseBody, err := json.Marshal(schema.QRISChargeSuccessResponse{
-			StatusCode:        "", // TODO: fill these
-			StatusMessage:     "",
+			StatusCode:        "201",
+			StatusMessage:     "QRIS transaction is created",
 			TransactionId:     chargeResponse.OrderId,
 			OrderId:           chargeResponse.OrderId,
-			MerchantId:        "",
+			MerchantId:        "MOCK",
 			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
 			Currency:          "IDR",
 			PaymentType:       chargeResponse.PaymentType.ToPaymentMethod(),
@@ -293,8 +299,8 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	case primitive.PaymentTypeVirtualAccountBCA:
 		responseBody, err := json.Marshal(schema.BCAVirtualAccountChargeSuccessResponse{
-			StatusCode:        "", // TODO: fill these
-			StatusMessage:     "",
+			StatusCode:        "201",
+			StatusMessage:     "Success, Bank Transfer transaction is created",
 			TransactionId:     chargeResponse.OrderId,
 			OrderId:           chargeResponse.OrderId,
 			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
@@ -324,8 +330,8 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	case primitive.PaymentTypeVirtualAccountBRI:
 		responseBody, err := json.Marshal(schema.BRIVirtualAccountChargeSuccessResponse{
-			StatusCode:        "", // TODO: fill these
-			StatusMessage:     "",
+			StatusCode:        "201",
+			StatusMessage:     "Success, Bank Transfer transaction is created",
 			TransactionId:     chargeResponse.OrderId,
 			OrderId:           chargeResponse.OrderId,
 			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
@@ -355,8 +361,8 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	case primitive.PaymentTypeVirtualAccountBNI:
 		responseBody, err := json.Marshal(schema.BNIVirtualAccountChargeSuccessResponse{
-			StatusCode:        "", // TODO: fill these
-			StatusMessage:     "",
+			StatusCode:        "201",
+			StatusMessage:     "Success, Bank Transfer transaction is created",
 			TransactionId:     chargeResponse.OrderId,
 			OrderId:           chargeResponse.OrderId,
 			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
@@ -386,8 +392,8 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	case primitive.PaymentTypeVirtualAccountPermata:
 		responseBody, err := json.Marshal(schema.PermataVirtualAccountChargeSuccessResponse{
-			StatusCode:        "", // TODO: fill these
-			StatusMessage:     "",
+			StatusCode:        "201",
+			StatusMessage:     "Success, PERMATA VA transaction is successful",
 			TransactionId:     chargeResponse.OrderId,
 			OrderId:           chargeResponse.OrderId,
 			GrossAmount:       strconv.FormatInt(chargeResponse.TransactionAmount, 10),
