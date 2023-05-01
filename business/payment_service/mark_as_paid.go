@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
+	"github.com/rs/zerolog"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 	"mock-payment-provider/primitive"
@@ -84,6 +84,8 @@ func (d *Dependency) MarkAsPaid(ctx context.Context, orderId string, paymentMeth
 	}
 
 	go func() {
+		log := zerolog.Ctx(ctx)
+
 		payload, err := d.buildSettlementMessage(settlementMessageParameters{
 			PaymentType:          paymentMethod,
 			OrderId:              orderId,
@@ -92,8 +94,7 @@ func (d *Dependency) MarkAsPaid(ctx context.Context, orderId string, paymentMeth
 			VirtualAccountNumber: virtualAccountNumber,
 		})
 		if err != nil {
-			// TODO: proper error logging
-			log.Printf("Encountered an error during marshaling json: %s", err.Error())
+			log.Err(err).Msg("Encountered an error during marshaling json")
 			return
 		}
 
@@ -101,9 +102,11 @@ func (d *Dependency) MarkAsPaid(ctx context.Context, orderId string, paymentMeth
 
 		err = d.webhookClient.Send(ctx, payload)
 		if err != nil {
-			// TODO: proper error logging
-			log.Printf("Encountered an error during sending webhook: %s", err.Error())
+			log.Err(err).Msg("Encountered an error during sending webhook")
+			return
 		}
+
+		log.Info().Bytes("payload", payload).Msg("Sent a webhook")
 	}()
 
 	return nil

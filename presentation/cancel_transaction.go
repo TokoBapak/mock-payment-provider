@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 
@@ -14,6 +15,8 @@ import (
 )
 
 func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
+	log := zerolog.Ctx(r.Context())
+
 	orderId := chi.URLParam(r, "order_id")
 	if orderId == "" {
 		responseBody, err := json.Marshal(schema.Error{
@@ -22,6 +25,7 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 			Id:            uuid.NewString(),
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -43,6 +47,7 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 				Id:            uuid.NewString(),
 			})
 			if err != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -59,6 +64,7 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 				StatusMessage: "Merchant cannot modify the status of the transaction",
 			})
 			if e != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -76,6 +82,7 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 			StatusMessage: "internal server error",
 		})
 		if e != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -97,6 +104,7 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 		TransactionStatus: cancelResponse.TransactionStatus.String(),
 	})
 	if e != nil {
+		log.Err(err).Msg("marshaling json")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

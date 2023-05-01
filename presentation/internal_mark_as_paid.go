@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/rs/zerolog/log"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 )
@@ -20,6 +21,7 @@ func (p *Presenter) InternalMarkAsPaid(w http.ResponseWriter, r *http.Request) {
 			Id:            "",
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -39,6 +41,7 @@ func (p *Presenter) InternalMarkAsPaid(w http.ResponseWriter, r *http.Request) {
 				Id:            "",
 			})
 			if err != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -56,6 +59,7 @@ func (p *Presenter) InternalMarkAsPaid(w http.ResponseWriter, r *http.Request) {
 				Id:            "",
 			})
 			if err != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -66,12 +70,16 @@ func (p *Presenter) InternalMarkAsPaid(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		log.Err(err).Str("order_id", requestBody.OrderId).Str("payment_method", requestBody.PaymentMethod.String()).
+			Msg("executing business function")
+
 		responseBody, err := json.Marshal(schema.Error{
 			StatusCode:    500,
 			StatusMessage: err.Error(),
 			Id:            "",
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

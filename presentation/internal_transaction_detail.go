@@ -5,11 +5,14 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/rs/zerolog"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 )
 
 func (p *Presenter) InternalTransactionDetail(w http.ResponseWriter, r *http.Request) {
+	log := zerolog.Ctx(r.Context())
+
 	transactionId := r.URL.Query().Get("id")
 	if transactionId == "" {
 		responseBody, err := json.Marshal(schema.Error{
@@ -18,6 +21,7 @@ func (p *Presenter) InternalTransactionDetail(w http.ResponseWriter, r *http.Req
 			Id:            "",
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -37,6 +41,7 @@ func (p *Presenter) InternalTransactionDetail(w http.ResponseWriter, r *http.Req
 				Id:            "",
 			})
 			if err != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -47,12 +52,15 @@ func (p *Presenter) InternalTransactionDetail(w http.ResponseWriter, r *http.Req
 			return
 		}
 
+		log.Err(err).Str("transaction_id", transactionId).Msg("executing business function")
+
 		responseBody, err := json.Marshal(schema.Error{
 			StatusCode:    500,
 			StatusMessage: err.Error(),
 			Id:            "",
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -73,6 +81,7 @@ func (p *Presenter) InternalTransactionDetail(w http.ResponseWriter, r *http.Req
 		EMoneyId:             transactionDetail.EMoneyID,
 	})
 	if err != nil {
+		log.Err(err).Msg("marshaling json")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

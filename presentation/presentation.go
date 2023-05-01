@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rs/zerolog/hlog"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 	"mock-payment-provider/primitive"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog"
 )
 
 type Presenter struct {
@@ -21,6 +23,7 @@ type Presenter struct {
 type Dependency struct {
 	TransactionService business.Transaction
 	PaymentService     business.Payment
+	Logger             zerolog.Logger
 }
 type PresenterConfig struct {
 	Hostname   string
@@ -36,6 +39,9 @@ func NewPresenter(config PresenterConfig) (*http.Server, error) {
 	}
 
 	router := chi.NewRouter()
+
+	router.Use(hlog.NewHandler(config.Dependency.Logger))
+	router.Use(hlog.URLHandler("request_url"))
 
 	router.Get("/", presenter.Index)
 

@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+
+	"github.com/rs/zerolog"
 )
 
 func (r *Repository) DeductCharge(ctx context.Context, virtualAccountNumber string) error {
@@ -20,7 +21,8 @@ func (r *Repository) DeductCharge(ctx context.Context, virtualAccountNumber stri
 	defer func() {
 		err := conn.Close()
 		if err != nil && !errors.Is(err, sql.ErrConnDone) {
-			log.Printf("returning connection back to pool: %s", err.Error())
+			log := zerolog.Ctx(ctx)
+			log.Err(err).Msg("returning connection back to pool")
 		}
 	}()
 

@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
 func (r *Repository) CreateCharge(ctx context.Context, virtualAccountNumber string, orderId string, amount int64, expiresAt time.Time) (account string, err error) {
@@ -21,7 +22,8 @@ func (r *Repository) CreateCharge(ctx context.Context, virtualAccountNumber stri
 	defer func() {
 		err := conn.Close()
 		if err != nil && !errors.Is(err, sql.ErrConnDone) {
-			log.Printf("closing connection back to pool: %s", err.Error())
+			log := zerolog.Ctx(ctx)
+			log.Err(err).Msg("returning connection back to pool")
 		}
 	}()
 

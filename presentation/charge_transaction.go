@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 	"mock-payment-provider/primitive"
@@ -24,6 +25,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			StatusMessage: "Malformed JSON",
 		})
 		if e != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -41,6 +43,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			StatusMessage: err.Error(),
 		})
 		if e != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -127,6 +130,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 				Id:            uuid.NewString(),
 			})
 			if err != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -144,6 +148,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 				StatusMessage: "Mismatched total transaction amount with the accumulated amount from product list",
 			})
 			if err != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -177,6 +182,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 
 			responseBody, err := json.Marshal(validationError)
 			if err != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -187,11 +193,14 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		log.Err(err).Any("charge_request", chargeRequest).Msg("executing business function")
+
 		responseBody, err := json.Marshal(schema.Error{
 			StatusCode:    http.StatusInternalServerError,
 			StatusMessage: "Internal Server Error.",
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -238,6 +247,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			Currency:               "IDR",
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -264,6 +274,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			Actions:                emoneyActions,
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -289,6 +300,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			Actions:           nil,
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -320,6 +332,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			Currency:    "IDR",
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -351,6 +364,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			Currency:    "IDR",
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -382,6 +396,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			Currency:    "IDR",
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -404,6 +419,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 			PermataVaNumber:   chargeResponse.VirtualAccountAction.VirtualAccountNumber,
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -418,6 +434,7 @@ func (p *Presenter) ChargeTransaction(w http.ResponseWriter, r *http.Request) {
 	// Running to this line of code means something's wrong when
 	// validating the payment type (or processing the payment type
 	// returned by the business logic).
+	log.Error().Str("payment_type", chargeResponse.PaymentType.String()).Msg("unexpected payment type")
 	w.WriteHeader(http.StatusInternalServerError)
 }
 

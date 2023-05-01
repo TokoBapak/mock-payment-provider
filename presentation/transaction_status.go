@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 	"mock-payment-provider/repository/signature"
@@ -15,6 +16,8 @@ import (
 )
 
 func (p *Presenter) GetTransactionStatus(w http.ResponseWriter, r *http.Request) {
+	log := zerolog.Ctx(r.Context())
+
 	orderId := chi.URLParam(r, "order_id")
 	if orderId == "" {
 		responseBody, err := json.Marshal(schema.Error{
@@ -23,6 +26,7 @@ func (p *Presenter) GetTransactionStatus(w http.ResponseWriter, r *http.Request)
 			Id:            uuid.NewString(),
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -43,6 +47,7 @@ func (p *Presenter) GetTransactionStatus(w http.ResponseWriter, r *http.Request)
 				Id:            uuid.NewString(),
 			})
 			if err != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -53,12 +58,15 @@ func (p *Presenter) GetTransactionStatus(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
+		log.Err(err).Str("order_id", orderId).Msg("executing business function")
+
 		responseBody, err := json.Marshal(schema.Error{
 			StatusCode:    500,
 			StatusMessage: "Internal server error.",
 			Id:            uuid.NewString(),
 		})
 		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -93,6 +101,7 @@ func (p *Presenter) GetTransactionStatus(w http.ResponseWriter, r *http.Request)
 		ReferenceId:              "",
 	})
 	if err != nil {
+		log.Err(err).Msg("marshaling json")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

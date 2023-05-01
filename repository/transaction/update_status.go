@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 
+	"github.com/rs/zerolog"
 	"mock-payment-provider/primitive"
 )
 
@@ -22,7 +22,8 @@ func (r *Repository) UpdateStatus(ctx context.Context, orderId string, status pr
 	defer func() {
 		err := conn.Close()
 		if err != nil {
-			log.Printf("closing connection: %s", err.Error())
+			log := zerolog.Ctx(ctx)
+			log.Err(err).Msg("closing connection")
 		}
 	}()
 

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/rs/zerolog"
 	"mock-payment-provider/presentation/schema"
 	"mock-payment-provider/repository/signature"
 
@@ -81,6 +82,8 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 
 		go func() {
 			// Send a PENDING webhook
+			log := zerolog.Ctx(ctx)
+
 			payload, err := d.buildPendingWebhookMessage(pendingWebhookParameters{
 				TransactionTime:      transactionTime,
 				GrossAmount:          totalAmount,
@@ -89,7 +92,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 				VirtualAccountNumber: virtualAccountNumber,
 			})
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("building pending webhook message")
 				return
 			}
 
@@ -100,12 +103,16 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 
 			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("sending webhook")
+				return
 			}
+
+			log.Info().Bytes("payload", payload).Msg("sent a webhook")
 		}()
 
 		go func(expiresAt time.Time, orderId string) {
 			// Send a EXPIRED webhook
+			log := zerolog.Ctx(ctx)
 
 			time.Sleep(time.Until(expiredAt))
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -113,7 +120,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 
 			transaction, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Str("orderId", orderId).Msg("acquiring transaction by order id")
 				return
 			}
 
@@ -125,7 +132,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 			// Update transaction status to expired
 			err = d.transactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Str("orderId", orderId).Msg("updating transaction status to expired")
 				return
 			}
 
@@ -139,14 +146,17 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 				PaymentType:     request.PaymentType,
 			})
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("building expired webhook message")
 				return
 			}
 
 			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("building expired webhook message")
+				return
 			}
+
+			log.Info().Bytes("payload", payload).Msg("sent a webhook")
 		}(expiredAt, request.OrderId)
 
 		return business.ChargeResponse{
@@ -198,6 +208,9 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 		}
 
 		go func() {
+			// Send a PENDING webhook
+			log := zerolog.Ctx(ctx)
+
 			payload, err := d.buildPendingWebhookMessage(pendingWebhookParameters{
 				TransactionTime:      transactionTime,
 				GrossAmount:          totalAmount,
@@ -206,7 +219,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 				VirtualAccountNumber: "",
 			})
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("building pending webhook message")
 				return
 			}
 
@@ -217,12 +230,16 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 
 			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("sending webhook")
+				return
 			}
+
+			log.Info().Bytes("payload", payload).Msg("sent a webhook")
 		}()
 
 		go func(expiresAt time.Time, orderId string) {
 			// Send a EXPIRED webhook
+			log := zerolog.Ctx(ctx)
 
 			time.Sleep(time.Until(expiredAt))
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -230,7 +247,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 
 			transaction, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Str("orderId", orderId).Msg("acquiring transaction by order id")
 				return
 			}
 
@@ -242,7 +259,7 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 			// Update transaction status to expired
 			err = d.transactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Str("orderId", orderId).Msg("updating transaction status to expired")
 				return
 			}
 
@@ -256,14 +273,17 @@ func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest)
 				PaymentType:     request.PaymentType,
 			})
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("building expired webhook message")
 				return
 			}
 
 			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("building expired webhook message")
+				return
 			}
+
+			log.Info().Bytes("payload", payload).Msg("sent a webhook")
 		}(expiredAt, request.OrderId)
 
 		return business.ChargeResponse{

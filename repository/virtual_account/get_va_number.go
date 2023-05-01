@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 
+	"github.com/rs/zerolog"
 	"mock-payment-provider/repository"
 )
 
@@ -22,7 +22,8 @@ func (r *Repository) GetByVirtualAccountNumber(ctx context.Context, virtualAccou
 	defer func() {
 		err := conn.Close()
 		if err != nil && !errors.Is(err, sql.ErrConnDone) {
-			log.Printf("returning connection back to pool: %s", err.Error())
+			log := zerolog.Ctx(ctx)
+			log.Err(err).Msg("returning connection back to pool")
 		}
 	}()
 
