@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
+	"github.com/rs/zerolog"
 	"mock-payment-provider/repository"
 )
 
@@ -19,7 +19,8 @@ func (r *Repository) Create(ctx context.Context, params repository.CreateTransac
 	defer func() {
 		err := conn.Close()
 		if err != nil {
-			log.Printf("returning connection back to pool: %s", err.Error())
+			log := zerolog.Ctx(ctx)
+			log.Err(err).Msg("returning connection back to pool")
 		}
 	}()
 

@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+
+	"github.com/rs/zerolog"
 )
 
 func (r *Repository) Migrate(ctx context.Context) error {
@@ -16,7 +17,8 @@ func (r *Repository) Migrate(ctx context.Context) error {
 	defer func() {
 		err := conn.Close()
 		if err != nil {
-			log.Printf("returning connection back to pool: %s", err.Error())
+			log := zerolog.Ctx(ctx)
+			log.Err(err).Msg("returning connection back to pool")
 		}
 	}()
 

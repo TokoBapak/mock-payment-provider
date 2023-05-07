@@ -10,10 +10,9 @@ type GopayChargeSuccessResponse struct {
 	TransactionTime   string `json:"transaction_time"`
 	TransactionStatus string `json:"transaction_status"`
 	Actions           []struct {
-		Name   string        `json:"name"`
-		Method string        `json:"method"`
-		Url    string        `json:"url"`
-		Fields []interface{} `json:"fields,omitempty"`
+		Name   string `json:"name"`
+		Method string `json:"method"`
+		Url    string `json:"url"`
 	} `json:"actions"`
 	ChannelResponseCode    string `json:"channel_response_code"`
 	ChannelResponseMessage string `json:"channel_response_message"`

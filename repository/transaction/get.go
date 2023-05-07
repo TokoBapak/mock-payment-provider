@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 
+	"github.com/rs/zerolog"
 	"mock-payment-provider/primitive"
 	"mock-payment-provider/repository"
 )
@@ -23,7 +23,8 @@ func (r *Repository) GetByOrderId(ctx context.Context, orderId string) (primitiv
 	defer func() {
 		err := conn.Close()
 		if err != nil {
-			log.Printf("closing connection: %s", err.Error())
+			log := zerolog.Ctx(ctx)
+			log.Err(err).Msg("closing connection")
 		}
 	}()
 

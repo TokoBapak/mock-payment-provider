@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 
@@ -13,20 +15,24 @@ import (
 )
 
 func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
-	// Parse input
+	log := zerolog.Ctx(r.Context())
+
 	orderId := chi.URLParam(r, "order_id")
 	if orderId == "" {
-		responseBody, e := json.Marshal(schema.Error{
-			StatusCode:    http.StatusBadRequest,
-			StatusMessage: "Empty Order ID",
+		responseBody, err := json.Marshal(schema.Error{
+			StatusCode:    404,
+			StatusMessage: "Transaction doesn't exist.",
+			Id:            uuid.NewString(),
 		})
-		if e != nil {
+		if err != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
+		// Do not complain. Do complain to Midtrans about the status code usage instead.
+		w.WriteHeader(http.StatusOK)
 		w.Write(responseBody)
 		return
 	}
@@ -35,17 +41,35 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 	cancelResponse, err := p.transactionService.Cancel(r.Context(), orderId)
 	if err != nil {
 		if errors.Is(err, business.ErrTransactionNotFound) {
-			responseBody, e := json.Marshal(schema.Error{
-				StatusCode:    http.StatusNotFound,
-				StatusMessage: "transaction not found",
+			responseBody, err := json.Marshal(schema.Error{
+				StatusCode:    404,
+				StatusMessage: "Transaction doesn't exist.",
+				Id:            uuid.NewString(),
 			})
-
-			if e != nil {
+			if err != nil {
+				log.Err(err).Msg("marshaling json")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
-			w.WriteHeader(http.StatusNotFound)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write(responseBody)
+			return
+		}
+
+		if errors.Is(err, business.ErrCannotModifyStatus) {
+			responseBody, e := json.Marshal(schema.Error{
+				StatusCode:    412,
+				StatusMessage: "Merchant cannot modify the status of the transaction",
+			})
+			if e != nil {
+				log.Err(err).Msg("marshaling json")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
 			w.Write(responseBody)
 			w.Header().Set("Content-Type", "application/json")
 			return
@@ -57,8 +81,8 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 			StatusCode:    http.StatusInternalServerError,
 			StatusMessage: "internal server error",
 		})
-
 		if e != nil {
+			log.Err(err).Msg("marshaling json")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -76,10 +100,11 @@ func (p *Presenter) CancelTransaction(w http.ResponseWriter, r *http.Request) {
 		StatusMessage:     "Success, transaction is canceled",
 		OrderId:           orderId,
 		PaymentType:       cancelResponse.PaymentType.String(),
-		TransactionTime:   cancelResponse.TransactionTime.Format(time.RFC3339),
+		TransactionTime:   cancelResponse.TransactionTime.Format(time.DateTime),
 		TransactionStatus: cancelResponse.TransactionStatus.String(),
 	})
 	if e != nil {
+		log.Err(err).Msg("marshaling json")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

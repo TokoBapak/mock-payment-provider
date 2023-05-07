@@ -2,19 +2,24 @@ package transaction_service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/rs/zerolog"
+	"mock-payment-provider/presentation/schema"
+	"mock-payment-provider/repository/signature"
 
 	"mock-payment-provider/business"
 	"mock-payment-provider/primitive"
 	"mock-payment-provider/repository"
 )
 
-func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) (business.ChargeResponse, error) {
+func (d *Dependency) Charge(ctx context.Context, request business.ChargeRequest) (business.ChargeResponse, error) {
 	// Validate the request payload
-	if err := ValidateChageRequest(request); err != nil {
+	if err := ValidateChargeRequest(request); err != nil {
 		return business.ChargeResponse{}, err
 	}
 
@@ -28,6 +33,7 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 		return business.ChargeResponse{}, business.ErrMismatchedTransactionAmount
 	}
 
+	transactionTime := time.Now()
 	switch request.PaymentType {
 	case primitive.PaymentTypeVirtualAccountBCA:
 		fallthrough
@@ -38,7 +44,7 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 	case primitive.PaymentTypeVirtualAccountBNI:
 		// Create new transaction
 		expiredAt := time.Now().Add(time.Hour * 24)
-		err := d.TransactionRepository.Create(
+		err := d.transactionRepository.Create(
 			ctx,
 			repository.CreateTransactionParam{
 				OrderID:     request.OrderId,
@@ -56,9 +62,16 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 			return business.ChargeResponse{}, fmt.Errorf("creating new transaction: %w", err)
 		}
 
+		// Acquire virtual account number from customer email
+		virtualAccountNumber, err := d.virtualAccountRepository.CreateOrGetVirtualAccountNumber(ctx, request.Customer.Email)
+		if err != nil {
+			return business.ChargeResponse{}, fmt.Errorf("acquiring virtual account number for %s: %w", request.Customer.Email, err)
+		}
+
 		// Create a virtual account entry
-		virtualAccountNumber, err := d.VirtualAccountRepository.CreateCharge(
+		_, err = d.virtualAccountRepository.CreateCharge(
 			ctx,
+			virtualAccountNumber,
 			request.OrderId,
 			request.TransactionAmount,
 			expiredAt,
@@ -69,26 +82,45 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 
 		go func() {
 			// Send a PENDING webhook
+			log := zerolog.Ctx(ctx)
 
-			// TODO: marshal payload
+			payload, err := d.buildPendingWebhookMessage(pendingWebhookParameters{
+				TransactionTime:      transactionTime,
+				GrossAmount:          totalAmount,
+				OrderId:              request.OrderId,
+				PaymentType:          request.PaymentType,
+				VirtualAccountNumber: virtualAccountNumber,
+			})
+			if err != nil {
+				log.Err(err).Msg("building pending webhook message")
+				return
+			}
+
+			// Sleep for 10 seconds to make sure client has received the response
+			time.Sleep(time.Second * 10)
+
 			ctx := context.Background()
 
-			err := d.WebhookClient.Send(ctx, []byte{})
+			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("sending webhook")
+				return
 			}
+
+			log.Info().Bytes("payload", payload).Msg("sent a webhook")
 		}()
 
 		go func(expiresAt time.Time, orderId string) {
 			// Send a EXPIRED webhook
+			log := zerolog.Ctx(ctx)
 
 			time.Sleep(time.Until(expiredAt))
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
 
-			transaction, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
+			transaction, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Str("orderId", orderId).Msg("acquiring transaction by order id")
 				return
 			}
 
@@ -98,20 +130,33 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 			}
 
 			// Update transaction status to expired
-			err = d.TransactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
+			err = d.transactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Str("orderId", orderId).Msg("updating transaction status to expired")
 				return
 			}
 
 			// Send webhook
 			ctx = context.Background()
 
-			// TODO: marshal from the expired schema
-			err = d.WebhookClient.Send(ctx, []byte{})
+			payload, err := d.buildExpiredWebhookMessage(expiredWebhookParameters{
+				TransactionTime: transactionTime,
+				GrossAmount:     totalAmount,
+				OrderId:         request.OrderId,
+				PaymentType:     request.PaymentType,
+			})
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("building expired webhook message")
+				return
 			}
+
+			err = d.webhookClient.Send(ctx, payload)
+			if err != nil {
+				log.Err(err).Msg("building expired webhook message")
+				return
+			}
+
+			log.Info().Bytes("payload", payload).Msg("sent a webhook")
 		}(expiredAt, request.OrderId)
 
 		return business.ChargeResponse{
@@ -133,7 +178,7 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 	case primitive.PaymentTypeEMoneyShopeePay:
 		// Create new transaction
 		expiredAt := time.Now().Add(time.Hour * 3)
-		err := d.TransactionRepository.Create(
+		err := d.transactionRepository.Create(
 			ctx,
 			repository.CreateTransactionParam{
 				OrderID:     request.OrderId,
@@ -152,7 +197,7 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 		}
 
 		// Create e-money entry
-		id, err := d.EMoneyRepository.CreateCharge(
+		id, err := d.emoneyRepository.CreateCharge(
 			ctx,
 			request.OrderId,
 			request.TransactionAmount,
@@ -164,26 +209,45 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 
 		go func() {
 			// Send a PENDING webhook
+			log := zerolog.Ctx(ctx)
 
-			// TODO: marshal payload
+			payload, err := d.buildPendingWebhookMessage(pendingWebhookParameters{
+				TransactionTime:      transactionTime,
+				GrossAmount:          totalAmount,
+				OrderId:              request.OrderId,
+				PaymentType:          request.PaymentType,
+				VirtualAccountNumber: "",
+			})
+			if err != nil {
+				log.Err(err).Msg("building pending webhook message")
+				return
+			}
+
+			// Sleep for 10 seconds to make sure client has received the response
+			time.Sleep(time.Second * 10)
+
 			ctx := context.Background()
 
-			err := d.WebhookClient.Send(ctx, []byte{})
+			err = d.webhookClient.Send(ctx, payload)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("sending webhook")
+				return
 			}
+
+			log.Info().Bytes("payload", payload).Msg("sent a webhook")
 		}()
 
 		go func(expiresAt time.Time, orderId string) {
 			// Send a EXPIRED webhook
+			log := zerolog.Ctx(ctx)
 
 			time.Sleep(time.Until(expiredAt))
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
 
-			transaction, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
+			transaction, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Str("orderId", orderId).Msg("acquiring transaction by order id")
 				return
 			}
 
@@ -193,20 +257,33 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 			}
 
 			// Update transaction status to expired
-			err = d.TransactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
+			err = d.transactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusExpired)
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Str("orderId", orderId).Msg("updating transaction status to expired")
 				return
 			}
 
 			// Send webhook
 			ctx = context.Background()
 
-			// TODO: marshal from the expired schema
-			err = d.WebhookClient.Send(ctx, []byte{})
+			payload, err := d.buildExpiredWebhookMessage(expiredWebhookParameters{
+				TransactionTime: transactionTime,
+				GrossAmount:     totalAmount,
+				OrderId:         request.OrderId,
+				PaymentType:     request.PaymentType,
+			})
 			if err != nil {
-				// TODO: properly log errors
+				log.Err(err).Msg("building expired webhook message")
+				return
 			}
+
+			err = d.webhookClient.Send(ctx, payload)
+			if err != nil {
+				log.Err(err).Msg("building expired webhook message")
+				return
+			}
+
+			log.Info().Bytes("payload", payload).Msg("sent a webhook")
 		}(expiredAt, request.OrderId)
 
 		return business.ChargeResponse{
@@ -241,7 +318,7 @@ func (d Dependency) Charge(ctx context.Context, request business.ChargeRequest) 
 	}
 }
 
-func ValidateChageRequest(request business.ChargeRequest) *business.RequestValidationError {
+func ValidateChargeRequest(request business.ChargeRequest) *business.RequestValidationError {
 	var issues []business.RequestValidationIssue
 
 	// validate payment_type
@@ -262,7 +339,7 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		})
 	}
 
-	// valdiate transaction.amount
+	// validate transaction.amount
 	if request.TransactionAmount <= 0 {
 		issues = append(issues, business.RequestValidationIssue{
 			Code:    business.RequestValidationCodeInvalidValue,
@@ -436,7 +513,7 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 		}
 	}
 
-	// validate customer.bliing_address.address
+	// validate customer.billing_address.address
 	if request.Customer.BillingAddress.Address == "" {
 		issues = append(issues, business.RequestValidationIssue{
 			Code:    business.RequestValidationCodeRequired,
@@ -637,7 +714,7 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 			})
 		}
 
-		// validate itmes.quantity
+		// validate items.quantity
 		if item.Quantity <= 0 {
 			issues = append(issues, business.RequestValidationIssue{
 				Code:    business.RequestValidationCodeInvalidValue,
@@ -687,4 +764,250 @@ func ValidateChageRequest(request business.ChargeRequest) *business.RequestValid
 	}
 
 	return nil
+}
+
+type pendingWebhookParameters struct {
+	TransactionTime      time.Time
+	GrossAmount          int64
+	OrderId              string
+	PaymentType          primitive.PaymentType
+	VirtualAccountNumber string
+}
+
+func (d *Dependency) buildPendingWebhookMessage(parameters pendingWebhookParameters) ([]byte, error) {
+	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, d.serverKey)
+	switch parameters.PaymentType {
+	case primitive.PaymentTypeVirtualAccountBCA:
+		return json.Marshal(schema.BCAVirtualAccountChargePendingResponse{
+			VaNumbers: []struct {
+				Bank     string `json:"bank"`
+				VaNumber string `json:"va_number"`
+			}{
+				{
+					Bank:     "bca",
+					VaNumber: parameters.VirtualAccountNumber,
+				},
+			},
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			OrderId:           parameters.OrderId,
+			PaymentType:       parameters.PaymentType.String(),
+			SignatureKey:      signatureKey,
+			StatusCode:        "200",
+			TransactionId:     parameters.OrderId,
+			TransactionStatus: primitive.TransactionStatusPending.String(),
+			FraudStatus:       "accept",
+			StatusMessage:     "midtrans payment notification",
+		})
+	case primitive.PaymentTypeVirtualAccountBRI:
+		return json.Marshal(schema.BRIVirtualAccountChargePendingResponse{
+			VaNumbers: []struct {
+				Bank     string `json:"bank"`
+				VaNumber string `json:"va_number"`
+			}{
+				{
+					Bank:     "bri",
+					VaNumber: parameters.VirtualAccountNumber,
+				},
+			},
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			OrderId:           parameters.OrderId,
+			PaymentType:       parameters.PaymentType.String(),
+			SignatureKey:      signatureKey,
+			StatusCode:        "200",
+			TransactionId:     parameters.OrderId,
+			TransactionStatus: primitive.TransactionStatusPending.String(),
+			FraudStatus:       "accept",
+			StatusMessage:     "midtrans payment notification",
+		})
+	case primitive.PaymentTypeVirtualAccountBNI:
+		return json.Marshal(schema.BNIVirtualAccountChargePendingResponse{
+			VaNumbers: []struct {
+				Bank     string `json:"bank"`
+				VaNumber string `json:"va_number"`
+			}{
+				{
+					Bank:     "bni",
+					VaNumber: parameters.VirtualAccountNumber,
+				},
+			},
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			OrderId:           parameters.OrderId,
+			PaymentType:       parameters.PaymentType.String(),
+			SignatureKey:      signatureKey,
+			StatusCode:        "200",
+			TransactionId:     parameters.OrderId,
+			TransactionStatus: primitive.TransactionStatusPending.String(),
+			FraudStatus:       "accept",
+			StatusMessage:     "midtrans payment notification",
+		})
+	case primitive.PaymentTypeVirtualAccountPermata:
+		return json.Marshal(schema.PermataVirtualAccountChargePendingResponse{
+			StatusCode:        "200",
+			StatusMessage:     "midtrans payment notification",
+			TransactionId:     parameters.OrderId,
+			OrderId:           parameters.OrderId,
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			PaymentType:       parameters.PaymentType.String(),
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusPending.String(),
+			FraudStatus:       "accept",
+			PermataVaNumber:   parameters.VirtualAccountNumber,
+			SignatureKey:      signatureKey,
+		})
+	case primitive.PaymentTypeEMoneyQRIS:
+		return json.Marshal(schema.QRISChargePendingResponse{
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusPending.String(),
+			TransactionId:     parameters.OrderId,
+			StatusMessage:     "midtrans payment notification",
+			StatusCode:        "200",
+			SignatureKey:      signatureKey,
+			PaymentType:       parameters.PaymentType.String(),
+			OrderId:           parameters.OrderId,
+			MerchantId:        "MOCK",
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			FraudStatus:       "accept",
+			Currency:          "IDR",
+			Acquirer:          "nobu",
+		})
+	case primitive.PaymentTypeEMoneyGopay:
+		return json.Marshal(schema.GopayChargePendingResponse{
+			StatusCode:        "200",
+			StatusMessage:     "midtrans payment notification",
+			TransactionId:     parameters.OrderId,
+			OrderId:           parameters.OrderId,
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			PaymentType:       parameters.PaymentType.String(),
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusPending.String(),
+			SignatureKey:      signatureKey,
+		})
+	case primitive.PaymentTypeEMoneyShopeePay:
+		return json.Marshal(schema.ShopeePayChargePendingResponse{
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusPending.String(),
+			TransactionId:     parameters.OrderId,
+			StatusMessage:     "midtrans payment notification",
+			StatusCode:        "200",
+			SignatureKey:      signatureKey,
+			PaymentType:       parameters.PaymentType.String(),
+			OrderId:           parameters.OrderId,
+			MerchantId:        "MOCK",
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			FraudStatus:       "accept",
+			Currency:          "IDR",
+		})
+	default:
+		return nil, fmt.Errorf("unknown payment type")
+	}
+}
+
+type expiredWebhookParameters struct {
+	TransactionTime time.Time
+	GrossAmount     int64
+	OrderId         string
+	PaymentType     primitive.PaymentType
+}
+
+func (d *Dependency) buildExpiredWebhookMessage(parameters expiredWebhookParameters) ([]byte, error) {
+	signatureKey := signature.Generate(parameters.OrderId, 200, parameters.GrossAmount, d.serverKey)
+
+	switch parameters.PaymentType {
+	case primitive.PaymentTypeVirtualAccountBCA:
+		return json.Marshal(schema.BCAVirtualAccountChargeExpiredResponse{
+			StatusCode:        "200",
+			StatusMessage:     "midtrans payment notification",
+			TransactionId:     parameters.OrderId,
+			OrderId:           parameters.OrderId,
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			PaymentType:       parameters.PaymentType.String(),
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusExpired.String(),
+			SignatureKey:      signatureKey,
+		})
+	case primitive.PaymentTypeVirtualAccountBRI:
+		return json.Marshal(schema.BRIVirtualAccountChargeExpiredResponse{
+			StatusCode:        "200",
+			StatusMessage:     "midtrans payment notification",
+			TransactionId:     parameters.OrderId,
+			OrderId:           parameters.OrderId,
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			PaymentType:       parameters.PaymentType.String(),
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusExpired.String(),
+			SignatureKey:      signatureKey,
+		})
+	case primitive.PaymentTypeVirtualAccountBNI:
+		return json.Marshal(schema.BRIVirtualAccountChargeExpiredResponse{
+			StatusCode:        "200",
+			StatusMessage:     "midtrans payment notification",
+			TransactionId:     parameters.OrderId,
+			OrderId:           parameters.OrderId,
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			PaymentType:       parameters.PaymentType.String(),
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusExpired.String(),
+			SignatureKey:      signatureKey,
+		})
+	case primitive.PaymentTypeVirtualAccountPermata:
+		return json.Marshal(schema.PermataVirtualAccountChargeExpiredResponse{
+			StatusCode:        "200",
+			StatusMessage:     "midtrans payment notification",
+			TransactionId:     parameters.OrderId,
+			OrderId:           parameters.OrderId,
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			PaymentType:       parameters.PaymentType.String(),
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusExpired.String(),
+			SignatureKey:      signatureKey,
+		})
+	case primitive.PaymentTypeEMoneyQRIS:
+		return json.Marshal(schema.QRISChargeExpiredResponse{
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusExpired.String(),
+			TransactionId:     parameters.OrderId,
+			StatusMessage:     "midtrans payment notification",
+			StatusCode:        "200",
+			SignatureKey:      signatureKey,
+			PaymentType:       parameters.PaymentType.String(),
+			OrderId:           parameters.OrderId,
+			MerchantId:        "MOCK",
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			FraudStatus:       "accept",
+			Currency:          "IDR",
+			Acquirer:          "nobu",
+		})
+	case primitive.PaymentTypeEMoneyGopay:
+		return json.Marshal(schema.GopayChargeExpiredResponse{
+			StatusCode:        "200",
+			StatusMessage:     "midtrans payment notification",
+			TransactionId:     parameters.OrderId,
+			OrderId:           parameters.OrderId,
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			PaymentType:       parameters.PaymentType.String(),
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusExpired.String(),
+			SignatureKey:      signatureKey,
+		})
+	case primitive.PaymentTypeEMoneyShopeePay:
+		return json.Marshal(schema.ShopeePayChargeExpiredResponse{
+			TransactionTime:   parameters.TransactionTime.Format(time.DateTime),
+			TransactionStatus: primitive.TransactionStatusExpired.String(),
+			TransactionId:     parameters.OrderId,
+			StatusMessage:     "midtrans payment notification",
+			StatusCode:        "200",
+			SignatureKey:      signatureKey,
+			PaymentType:       parameters.PaymentType.String(),
+			OrderId:           parameters.OrderId,
+			MerchantId:        "MOCK",
+			GrossAmount:       strconv.FormatInt(parameters.GrossAmount, 10),
+			FraudStatus:       "accept",
+			Currency:          "IDR",
+		})
+	default:
+		return nil, fmt.Errorf("unknown payment type")
+	}
 }

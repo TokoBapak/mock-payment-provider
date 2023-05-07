@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rs/zerolog"
 	"mock-payment-provider/repository/transaction"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -63,7 +64,8 @@ func destroy(ctx context.Context, db *sql.DB) error {
 	defer func() {
 		err := conn.Close()
 		if err != nil {
-			log.Printf("returning connection back to pool: %s", err.Error())
+			log := zerolog.Ctx(ctx)
+			log.Err(err).Msg("returning connection back to pool")
 		}
 	}()
 

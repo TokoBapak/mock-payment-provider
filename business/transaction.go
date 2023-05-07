@@ -11,6 +11,7 @@ type Transaction interface {
 	Charge(ctx context.Context, request ChargeRequest) (ChargeResponse, error)
 	Cancel(ctx context.Context, orderId string) (CancelResponse, error)
 	GetStatus(ctx context.Context, orderId string) (GetStatusResponse, error)
+	Expire(ctx context.Context, orderId string) (ExpireResponse, error)
 }
 
 type ProductItem struct {
@@ -128,4 +129,15 @@ type CancelResponse struct {
 type GetStatusResponse struct {
 	OrderId           string
 	TransactionStatus primitive.TransactionStatus
+	TransactionAmount int64
+	PaymentType       primitive.PaymentType
+	TransactionTime   time.Time
+}
+
+type ExpireResponse struct {
+	OrderId           string
+	TransactionAmount int64
+	PaymentType       primitive.PaymentType
+	TransactionStatus primitive.TransactionStatus
+	TransactionTime   time.Time
 }

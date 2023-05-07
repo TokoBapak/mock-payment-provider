@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	ServerKey                string
 	TransactionRepository    repository.TransactionRepository
 	WebhookClient            repository.WebhookClient
 	EMoneyRepository         repository.EMoneyRepository
@@ -14,6 +15,7 @@ type Config struct {
 }
 
 type Dependency struct {
+	serverKey                string
 	transactionRepository    repository.TransactionRepository
 	webhookClient            repository.WebhookClient
 	eMoneyRepository         repository.EMoneyRepository
@@ -38,6 +40,7 @@ func NewPaymentService(config Config) (*Dependency, error) {
 	}
 
 	return &Dependency{
+		serverKey:                config.ServerKey,
 		transactionRepository:    config.TransactionRepository,
 		webhookClient:            config.WebhookClient,
 		eMoneyRepository:         config.EMoneyRepository,

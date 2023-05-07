@@ -9,12 +9,12 @@ import (
 	"mock-payment-provider/repository"
 )
 
-func (d Dependency) GetStatus(ctx context.Context, orderId string) (business.GetStatusResponse, error) {
+func (d *Dependency) GetStatus(ctx context.Context, orderId string) (business.GetStatusResponse, error) {
 	if orderId == "" {
 		return business.GetStatusResponse{}, fmt.Errorf("empty order id")
 	}
 
-	transaction, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
+	transaction, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return business.GetStatusResponse{}, business.ErrTransactionNotFound
@@ -26,5 +26,8 @@ func (d Dependency) GetStatus(ctx context.Context, orderId string) (business.Get
 	return business.GetStatusResponse{
 		OrderId:           orderId,
 		TransactionStatus: transaction.TransactionStatus,
+		TransactionAmount: transaction.TransactionAmount,
+		PaymentType:       transaction.PaymentType,
+		TransactionTime:   transaction.TransactionTime,
 	}, nil
 }

@@ -10,13 +10,13 @@ import (
 	"mock-payment-provider/repository"
 )
 
-func (d Dependency) Cancel(ctx context.Context, orderId string) (business.CancelResponse, error) {
+func (d *Dependency) Cancel(ctx context.Context, orderId string) (business.CancelResponse, error) {
 	if orderId == "" {
 		return business.CancelResponse{}, fmt.Errorf("empty order id")
 	}
 
 	// Check for transaction status. If it's cancelled before or expired, then we shouldn't cancel it
-	transactionStatus, err := d.TransactionRepository.GetByOrderId(ctx, orderId)
+	transactionStatus, err := d.transactionRepository.GetByOrderId(ctx, orderId)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return business.CancelResponse{}, business.ErrTransactionNotFound
@@ -26,12 +26,14 @@ func (d Dependency) Cancel(ctx context.Context, orderId string) (business.Cancel
 	}
 
 	// We can't cancel any transaction that has been canceled, settled, or expired
-	if transactionStatus.TransactionStatus != primitive.TransactionStatusPending {
+	if transactionStatus.TransactionStatus == primitive.TransactionStatusExpired ||
+		transactionStatus.TransactionStatus == primitive.TransactionStatusSettled ||
+		transactionStatus.TransactionStatus == primitive.TransactionStatusCanceled {
 		return business.CancelResponse{}, business.ErrCannotModifyStatus
 	}
 
 	// Cancel the transaction
-	err = d.TransactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusCanceled)
+	err = d.transactionRepository.UpdateStatus(ctx, orderId, primitive.TransactionStatusCanceled)
 	if err != nil {
 		return business.CancelResponse{}, fmt.Errorf("modifying the transaction status to canceled: %w", err)
 	}
