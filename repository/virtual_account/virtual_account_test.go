@@ -45,3 +45,27 @@ func TestMain(m *testing.M) {
 
 	os.Exit(exitCode)
 }
+
+func TestNewVirtualAccountRepository(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		repository, err := virtual_account.NewVirtualAccountRepository(&sql.DB{})
+		if err != nil {
+			t.Errorf("unexpected error: %s", err.Error())
+		}
+
+		if repository == nil {
+			t.Errorf("expecting repository to be not nil, got nil instead")
+		}
+	})
+
+	t.Run("NilDatabase", func(t *testing.T) {
+		_, err := virtual_account.NewVirtualAccountRepository(nil)
+		if err == nil {
+			t.Errorf("expecting an error, got nil instead")
+		}
+
+		if err.Error() != "db is nil" {
+			t.Errorf("expecting an error of 'db is nil', instead got %s", err.Error())
+		}
+	})
+}
