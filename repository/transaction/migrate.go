@@ -37,9 +37,9 @@ func (r *Repository) Migrate(ctx context.Context) error {
     		amount INT NOT NULL,
     		payment_type INT NOT NULL,
     		status INT NOT NULL,
-    		expired_at TEXT NOT NULL,
-    		created_at TEXT NOT NULL,
-    		updated_at TEXT NOT NULL
+    		expired_at DATETIME NOT NULL,
+    		created_at DATETIME NOT NULL,
+    		updated_at DATETIME NOT NULL
 		)`)
 	if err != nil {
 		if e := tx.Rollback(); e != nil {

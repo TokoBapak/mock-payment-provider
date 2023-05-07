@@ -36,8 +36,8 @@ func (r *Repository) Migrate(ctx context.Context) error {
     		unique_identifier TEXT PRIMARY KEY,
     		virtual_account_number TEXT NOT NULL,
     		current_order_id TEXT NULL,
-    		created_at TEXT NOT NULL,
-    		updated_at TEXT NOT NULL
+    		created_at DATETIME NOT NULL,
+    		updated_at DATETIME NOT NULL
 		)`,
 	)
 	if err != nil {
@@ -66,9 +66,9 @@ func (r *Repository) Migrate(ctx context.Context) error {
 			order_id TEXT PRIMARY KEY,
     		virtual_account_number TEXT NOT NULL,
 			amount INT NOT NULL,
-			expired_at TEXT NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL
+			expired_at DATETIME NOT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL
 		)`,
 	)
 	if err != nil {
