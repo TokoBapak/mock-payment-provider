@@ -36,9 +36,9 @@ func (r *Repository) Migrate(ctx context.Context) error {
 			order_id TEXT PRIMARY KEY,
     		id TEXT NOT NULL,
 			amount INT NOT NULL,
-			expired_at TEXT NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL
+			expired_at DATETIME NOT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL
 		)`,
 	)
 	if err != nil {
