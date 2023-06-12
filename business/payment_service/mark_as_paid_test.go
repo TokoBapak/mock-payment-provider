@@ -17,8 +17,7 @@ import (
 )
 
 func TestMarkAsPaid(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-	defer cancel()
+	ctx := context.Background()
 
 	transactionRepository, err := transaction.NewTransactionRepository(db)
 	if err != nil {
