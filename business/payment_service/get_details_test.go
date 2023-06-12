@@ -28,10 +28,7 @@ var (
 
 func TestMain(m *testing.M) {
 	var err error = nil
-	// db, err = sql.Open("sqlite3", ":memory:?_txlock=exclusive&_foreign_keys=1&")
-	// if err != nil {
-	// 	log.Fatalf("Opening sql database: %s", err.Error())
-	// }
+
 	cfg = parseConfig()
 	db, err = sql.Open("sqlite3", cfg.databasePath)
 	if err != nil {
