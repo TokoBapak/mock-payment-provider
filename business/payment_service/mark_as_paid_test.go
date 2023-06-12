@@ -111,7 +111,7 @@ func TestMarkAsPaid(t *testing.T) {
 		})
 		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeUnspecified)
 		if err != nil {
-			t.Errorf("expecting error to be not nil, but got nil")
+			t.Errorf("expecting error to be nil, but got %v", err)
 		}
 	})
 
