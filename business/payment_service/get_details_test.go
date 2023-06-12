@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 
 	db.SetMaxOpenConns(1)
 
-	setupCtx, setupCancel := context.WithTimeout(context.Background(), time.Minute)
+	setupCtx, setupCancel := context.WithTimeout(context.Background(), time.Minute * 5)
 	defer setupCancel()
 
 	transactionRepository, err := transaction.NewTransactionRepository(db)
