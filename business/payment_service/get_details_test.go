@@ -242,6 +242,6 @@ func TestBusinessGetDetails(t *testing.T) {
 func delete(ctx context.Context, db *sql.DB, table string) {
 	_, err := db.ExecContext(ctx, "DELETE FROM "+table)
 	if err != nil {
-		log.Fatalf("deleting %s: %s", table, err.Error())
+		log.Printf("deleting from %s: %s", table, err.Error())
 	}
 }
