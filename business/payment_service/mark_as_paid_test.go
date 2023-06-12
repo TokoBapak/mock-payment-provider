@@ -70,16 +70,17 @@ func TestMarkAsPaid(t *testing.T) {
 			OrderID:     orderId,
 			Amount:      50000,
 			PaymentType: primitive.PaymentTypeEMoneyQRIS,
-			Status:      primitive.TransactionStatusPending,
+			Status:      primitive.TransactionStatusExpired,
 			ExpiredAt:   time.Now().Add(-time.Minute),
 		})
-		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeUnspecified)
+		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
 		if err == nil {
 			t.Errorf("expecting error to be not nil, but got nil")
 		}
 		if !errors.Is(err, business.ErrCannotModifyStatus) {
 			t.Errorf("expecting error %s, instead got %v", business.ErrCannotModifyStatus, err)
 		}
+
 	})
 
 	t.Run("MarkAsPaid should return err 'cannot modify status' if the previous status is not pending", func(t *testing.T) {
@@ -91,7 +92,7 @@ func TestMarkAsPaid(t *testing.T) {
 			Status:      primitive.TransactionStatusSettled,
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
-		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeUnspecified)
+		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
 		if err == nil {
 			t.Errorf("expecting error to be not nil, but got nil")
 		}
@@ -109,9 +110,10 @@ func TestMarkAsPaid(t *testing.T) {
 			Status:      primitive.TransactionStatusPending,
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
-		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeUnspecified)
+		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
 		if err != nil {
 			t.Errorf("expecting error to be nil, but got %v", err)
 		}
 	})
+	delete()
 }
