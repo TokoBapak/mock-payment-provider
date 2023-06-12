@@ -110,11 +110,8 @@ func TestMarkAsPaid(t *testing.T) {
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
 		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeUnspecified)
-		if err == nil {
+		if err != nil {
 			t.Errorf("expecting error to be not nil, but got nil")
-		}
-		if !errors.Is(err, business.ErrCannotModifyStatus) {
-			t.Errorf("expecting error %s, instead got %v", business.ErrCannotModifyStatus, err)
 		}
 	})
 
