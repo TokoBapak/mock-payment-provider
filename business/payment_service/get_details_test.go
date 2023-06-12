@@ -175,26 +175,58 @@ func TestBusinessGetDetails(t *testing.T) {
 	t.Run("GetDetails should return the correct details", func(t *testing.T) {
 		vaNumber, err := virtualAccountRepository.CreateOrGetVirtualAccountNumber(ctx, "annedoe@example.com")
 		if err != nil {
-			delete()
+			_, err = db.Exec("DELETE FROM virtual_accounts")
+			if err != nil {
+				log.Printf("Deleting virtual accounts: %s", err.Error())
+			}
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
 		orderId := "order-id"
 		_, err = virtualAccountRepository.CreateCharge(ctx, vaNumber, orderId, 50000, time.Now().Add(time.Hour))
 		if err != nil {
-			delete()
+			_, err = db.Exec("DELETE FROM virtual_accounts")
+			if err != nil {
+				log.Printf("Deleting virtual accounts: %s", err.Error())
+			}
+			_, err = db.Exec("DELETE FROM virtual_account_entries")
+			if err != nil {
+				log.Printf("Deleting virtual account entries: %s", err.Error())
+			}
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
 		_, err = emoneyRepository.CreateCharge(ctx, orderId, 50000, time.Now().Add(time.Hour))
 		if err != nil {
-			delete()
+			_, err = db.Exec("DELETE FROM virtual_accounts")
+			if err != nil {
+				log.Printf("Deleting virtual accounts: %s", err.Error())
+			}
+			_, err = db.Exec("DELETE FROM virtual_account_entries")
+			if err != nil {
+				log.Printf("Deleting virtual account entries: %s", err.Error())
+			}
+			_, err = db.Exec("DELETE FROM emoney_entries")
+			if err != nil {
+				log.Printf("Deleting emoney entries: %s", err.Error())
+			}
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
 		_, err = paymentService.GetDetail(ctx, vaNumber)
 		if err == nil {
-			delete()
+			_, err = db.Exec("DELETE FROM virtual_accounts")
+			if err != nil {
+				log.Printf("Deleting virtual accounts: %s", err.Error())
+			}
+			_, err = db.Exec("DELETE FROM virtual_account_entries")
+			if err != nil {
+				log.Printf("Deleting virtual account entries: %s", err.Error())
+			}
+			_, err = db.Exec("DELETE FROM emoney_entries")
+			if err != nil {
+				log.Printf("Deleting emoney entries: %s", err.Error())
+			}
 			t.Errorf("expecting error to be not nil, but got nil")
 		}
 
@@ -206,7 +238,22 @@ func TestBusinessGetDetails(t *testing.T) {
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
 		if err != nil {
-			delete()
+			_, err = db.Exec("DELETE FROM transaction_log")
+			if err != nil {
+				log.Printf("Deleting transaction log: %s", err.Error())
+			}
+			_, err = db.Exec("DELETE FROM virtual_accounts")
+			if err != nil {
+				log.Printf("Deleting virtual accounts: %s", err.Error())
+			}
+			_, err = db.Exec("DELETE FROM virtual_account_entries")
+			if err != nil {
+				log.Printf("Deleting virtual account entries: %s", err.Error())
+			}
+			_, err = db.Exec("DELETE FROM emoney_entries")
+			if err != nil {
+				log.Printf("Deleting emoney entries: %s", err.Error())
+			}
 			t.Errorf("expecting not error when inserting transaction, instead got %s", err.Error())
 		}
 
@@ -214,26 +261,21 @@ func TestBusinessGetDetails(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected error: %s", err.Error())
 		}
-		delete()
+		_, err = db.Exec("DELETE FROM transaction_log")
+		if err != nil {
+			log.Printf("Deleting transaction log: %s", err.Error())
+		}
+		_, err = db.Exec("DELETE FROM virtual_accounts")
+		if err != nil {
+			log.Printf("Deleting virtual accounts: %s", err.Error())
+		}
+		_, err = db.Exec("DELETE FROM virtual_account_entries")
+		if err != nil {
+			log.Printf("Deleting virtual account entries: %s", err.Error())
+		}
+		_, err = db.Exec("DELETE FROM emoney_entries")
+		if err != nil {
+			log.Printf("Deleting emoney entries: %s", err.Error())
+		}
 	})
 }
-
-func delete() {
-	_, err := db.Exec("DELETE FROM transaction_log")
-	if err != nil {
-		log.Printf("Deleting transaction log: %s", err.Error())
-	}
-	_, err = db.Exec("DELETE FROM virtual_accounts")
-	if err != nil {
-		log.Printf("Deleting virtual accounts: %s", err.Error())
-	}
-	_, err = db.Exec("DELETE FROM virtual_account_entries")
-	if err != nil {
-		log.Printf("Deleting virtual account entries: %s", err.Error())
-	}
-	_, err = db.Exec("DELETE FROM emoney_entries")
-	if err != nil {
-		log.Printf("Deleting emoney entries: %s", err.Error())
-	}
-}
-

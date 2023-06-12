@@ -3,6 +3,7 @@ package payment_service_test
 import (
 	"context"
 	"errors"
+	"log"
 	"mock-payment-provider/business"
 	"mock-payment-provider/business/payment_service"
 	"mock-payment-provider/primitive"
@@ -115,5 +116,8 @@ func TestMarkAsPaid(t *testing.T) {
 			t.Errorf("expecting error to be nil, but got %v", err)
 		}
 	})
-	delete()
+	_, err = db.Exec("DELETE FROM transaction_log")
+	if err != nil {
+		log.Printf("Deleting transaction log: %s", err.Error())
+	}
 }
