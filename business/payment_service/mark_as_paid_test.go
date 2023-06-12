@@ -16,7 +16,7 @@ import (
 )
 
 func TestMarkAsPaid(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute * 5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
 	defer cancel()
 
 	transactionRepository, err := transaction.NewTransactionRepository(db)
@@ -114,6 +114,4 @@ func TestMarkAsPaid(t *testing.T) {
 			t.Errorf("expecting error to be nil, but got %v", err)
 		}
 	})
-
-	delete(ctx, db, "transaction_log")
 }

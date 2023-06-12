@@ -72,6 +72,22 @@ func TestMain(m *testing.M) {
 
 	exitCode := m.Run()
 
+	_, err = db.Exec("DELETE FROM transaction_log")
+	if err != nil {
+		log.Printf("Deleting transaction log: %s", err.Error())
+	}
+	_, err = db.Exec("DELETE FROM virtual_accounts")
+	if err != nil {
+		log.Printf("Deleting virtual accounts: %s", err.Error())
+	}
+	_, err = db.Exec("DELETE FROM virtual_account_entries")
+	if err != nil {
+		log.Printf("Deleting virtual account entries: %s", err.Error())
+	}
+	_, err = db.Exec("DELETE FROM emoney_entries")
+	if err != nil {
+		log.Printf("Deleting emoney entries: %s", err.Error())
+	}
 	err = db.Close()
 	if err != nil {
 		log.Printf("Closing database: %s", err.Error())
@@ -124,7 +140,7 @@ func parseConfig() config {
 
 func TestBusinessGetDetails(t *testing.T) {
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute * 5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
 	defer cancel()
 
 	transactionRepository, err := transaction.NewTransactionRepository(db)
@@ -175,32 +191,22 @@ func TestBusinessGetDetails(t *testing.T) {
 	t.Run("GetDetails should return the correct details", func(t *testing.T) {
 		vaNumber, err := virtualAccountRepository.CreateOrGetVirtualAccountNumber(ctx, "annedoe@example.com")
 		if err != nil {
-			delete(ctx, db, "virtual_accounts")
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
 		orderId := "order-id"
 		_, err = virtualAccountRepository.CreateCharge(ctx, vaNumber, orderId, 50000, time.Now().Add(time.Hour))
 		if err != nil {
-			delete(ctx, db, "virtual_accounts")
-			delete(ctx, db, "virtual_account_entries")
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
 		_, err = emoneyRepository.CreateCharge(ctx, orderId, 50000, time.Now().Add(time.Hour))
 		if err != nil {
-			delete(ctx, db, "virtual_accounts")
-			delete(ctx, db, "virtual_account_entries")
-			delete(ctx, db, "emoney_entries")
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
 		_, err = paymentService.GetDetail(ctx, vaNumber)
 		if err == nil {
-			delete(ctx, db, "transaction_log")
-			delete(ctx, db, "virtual_accounts")
-			delete(ctx, db, "virtual_account_entries")
-			delete(ctx, db, "emoney_entries")
 			t.Errorf("expecting error to be not nil, but got nil")
 		}
 
@@ -212,36 +218,13 @@ func TestBusinessGetDetails(t *testing.T) {
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
 		if err != nil {
-			if !errors.Is(err, repository.ErrDuplicate) {
-				delete(ctx, db, "transaction_log")
-				delete(ctx, db, "virtual_account_entries")
-				delete(ctx, db, "virtual_accounts")
-				delete(ctx, db, "emoney_entries")
-			}
 			t.Errorf("expecting not error when inserting transaction, instead got %s", err.Error())
 		}
 
 		_, err = paymentService.GetDetail(ctx, vaNumber)
 		if err != nil {
-			delete(ctx, db, "transaction_log")
-			delete(ctx, db, "virtual_accounts")
-			delete(ctx, db, "virtual_account_entries")
-			delete(ctx, db, "emoney_entries")
 			t.Errorf("unexpected error: %s", err.Error())
 		}
-
-		delete(ctx, db, "transaction_log")
-		delete(ctx, db, "virtual_account_entries")
-		delete(ctx, db, "virtual_accounts")
-		delete(ctx, db, "emoney_entries")
-
 	})
 
-}
-
-func delete(ctx context.Context, db *sql.DB, table string) {
-	_, err := db.ExecContext(ctx, "DELETE FROM "+table)
-	if err != nil {
-		log.Printf("deleting from %s: %s", table, err.Error())
-	}
 }
