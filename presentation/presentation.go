@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
-	"github.com/rs/zerolog/hlog"
 	"mock-payment-provider/business"
 	"mock-payment-provider/presentation/schema"
 	"mock-payment-provider/primitive"
+
+	"github.com/rs/zerolog/hlog"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
@@ -43,15 +45,15 @@ func NewPresenter(config PresenterConfig) (*http.Server, error) {
 	router.Use(hlog.NewHandler(config.Dependency.Logger))
 	router.Use(hlog.URLHandler("request_url"))
 
-	router.Get("/", presenter.Index)
-
-	// Internal routes
-	router.Post("/internal/mark-as-paid", presenter.InternalMarkAsPaid)
-	router.Get("/internal/transaction-detail", presenter.InternalTransactionDetail)
-
 	// Apply authorization middleware
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Skip for index and internal paths
+			if r.URL.Path == "/" || strings.HasPrefix(r.URL.Path, "/internal") {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			user, _, ok := r.BasicAuth()
 			if !ok || user != config.ServerKey {
 				responseBody, err := json.Marshal(schema.Error{
@@ -72,6 +74,12 @@ func NewPresenter(config PresenterConfig) (*http.Server, error) {
 			next.ServeHTTP(w, r)
 		})
 	})
+
+	router.Get("/", presenter.Index)
+
+	// Internal routes
+	router.Post("/internal/mark-as-paid", presenter.InternalMarkAsPaid)
+	router.Get("/internal/transaction-detail", presenter.InternalTransactionDetail)
 
 	// External routes
 	router.Post("/charge", presenter.ChargeTransaction)
