@@ -17,7 +17,8 @@ import (
 )
 
 func TestMarkAsPaid(t *testing.T) {
-	ctx := context.Background()
+	ctx, setupCancel := context.WithTimeout(context.Background(), time.Minute*5)
+	defer setupCancel()
 
 	transactionRepository, err := transaction.NewTransactionRepository(db)
 	if err != nil {
@@ -65,7 +66,7 @@ func TestMarkAsPaid(t *testing.T) {
 	})
 
 	t.Run("MarkAsPaid should return err 'cannot modify status' if the transaction is already expired", func(t *testing.T) {
-		orderId := "order-id"
+		orderId := "order-id-expired"
 		err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
 			OrderID:     orderId,
 			Amount:      50000,
@@ -74,6 +75,7 @@ func TestMarkAsPaid(t *testing.T) {
 			ExpiredAt:   time.Now().Add(-time.Minute),
 		})
 		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
+		log.Println(err)
 		if err == nil {
 			t.Errorf("expecting error to be not nil, but got nil")
 		}
@@ -102,7 +104,7 @@ func TestMarkAsPaid(t *testing.T) {
 	})
 
 	t.Run("MarkAsPaid should return err if the payment method is not supported", func(t *testing.T) {
-		orderId := "order-id-3"
+		orderId := "order-id-not-supported"
 		err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
 			OrderID:     orderId,
 			Amount:      50000,
@@ -115,8 +117,4 @@ func TestMarkAsPaid(t *testing.T) {
 			t.Errorf("expecting error to be nil, but got %v", err)
 		}
 	})
-	_, err = db.Exec("DELETE FROM transaction_log")
-	if err != nil {
-		log.Printf("Deleting transaction log: %s", err.Error())
-	}
 }

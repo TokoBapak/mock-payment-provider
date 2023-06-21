@@ -37,7 +37,8 @@ func TestMain(m *testing.M) {
 
 	db.SetMaxOpenConns(1)
 
-	setupCtx := context.Background()
+	setupCtx, setupCancel := context.WithTimeout(context.Background(), time.Minute*5)
+	defer setupCancel()
 
 	transactionRepository, err := transaction.NewTransactionRepository(db)
 	if err != nil {
@@ -68,6 +69,22 @@ func TestMain(m *testing.M) {
 
 	exitCode := m.Run()
 
+	_, err = db.Exec("DELETE FROM transaction_log")
+	if err != nil {
+		log.Printf("DELETE transaction log: %s", err.Error())
+	}
+	_, err = db.Exec("DELETE FROM virtual_accounts")
+	if err != nil {
+		log.Printf("DELETE virtual accounts: %s", err.Error())
+	}
+	_, err = db.Exec("DELETE FROM virtual_account_entries")
+	if err != nil {
+		log.Printf("DELETE virtual account entries: %s", err.Error())
+	}
+	_, err = db.Exec("DELETE FROM emoney_entries")
+	if err != nil {
+		log.Printf("DELETE FROM emoney entries: %s", err.Error())
+	}
 	err = db.Close()
 	if err != nil {
 		log.Printf("Closing database: %s", err.Error())
@@ -120,8 +137,8 @@ func parseConfig() config {
 
 func TestBusinessGetDetails(t *testing.T) {
 
-	ctx := context.Background()
-
+	ctx, setupCancel := context.WithTimeout(context.Background(), time.Minute*5)
+	defer setupCancel()
 	transactionRepository, err := transaction.NewTransactionRepository(db)
 	if err != nil {
 		t.Errorf("creating transaction repository: %s", err.Error())
@@ -156,6 +173,9 @@ func TestBusinessGetDetails(t *testing.T) {
 		if err == nil {
 			t.Errorf("expecting error to be not nil, but got nil")
 		}
+		if err.Error() != "acquiring from virtual account store: virtualAccountNumber is empty" {
+			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
+		}
 	})
 	t.Run("GetDetails should return err 'not found' if the order id is not found", func(t *testing.T) {
 		_, err = paymentService.GetDetail(ctx, "not-exist")
@@ -170,59 +190,26 @@ func TestBusinessGetDetails(t *testing.T) {
 	t.Run("GetDetails should return the correct details", func(t *testing.T) {
 		vaNumber, err := virtualAccountRepository.CreateOrGetVirtualAccountNumber(ctx, "annedoe@example.com")
 		if err != nil {
-			_, err = db.Exec("DELETE FROM virtual_accounts")
-			if err != nil {
-				log.Printf("Deleting virtual accounts: %s", err.Error())
-			}
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
 		orderId := "order-id"
 		_, err = virtualAccountRepository.CreateCharge(ctx, vaNumber, orderId, 50000, time.Now().Add(time.Hour))
 		if err != nil {
-			_, err = db.Exec("DELETE FROM virtual_accounts")
-			if err != nil {
-				log.Printf("Deleting virtual accounts: %s", err.Error())
-			}
-			_, err = db.Exec("DELETE FROM virtual_account_entries")
-			if err != nil {
-				log.Printf("Deleting virtual account entries: %s", err.Error())
-			}
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
 		_, err = emoneyRepository.CreateCharge(ctx, orderId, 50000, time.Now().Add(time.Hour))
 		if err != nil {
-			_, err = db.Exec("DELETE FROM virtual_accounts")
-			if err != nil {
-				log.Printf("Deleting virtual accounts: %s", err.Error())
-			}
-			_, err = db.Exec("DELETE FROM virtual_account_entries")
-			if err != nil {
-				log.Printf("Deleting virtual account entries: %s", err.Error())
-			}
-			_, err = db.Exec("DELETE FROM emoney_entries")
-			if err != nil {
-				log.Printf("Deleting emoney entries: %s", err.Error())
-			}
 			t.Errorf("unexpected error: %s", err.Error())
 		}
 
 		_, err = paymentService.GetDetail(ctx, vaNumber)
 		if err == nil {
-			_, err = db.Exec("DELETE FROM virtual_accounts")
-			if err != nil {
-				log.Printf("Deleting virtual accounts: %s", err.Error())
-			}
-			_, err = db.Exec("DELETE FROM virtual_account_entries")
-			if err != nil {
-				log.Printf("Deleting virtual account entries: %s", err.Error())
-			}
-			_, err = db.Exec("DELETE FROM emoney_entries")
-			if err != nil {
-				log.Printf("Deleting emoney entries: %s", err.Error())
-			}
 			t.Errorf("expecting error to be not nil, but got nil")
+		}
+		if !errors.Is(err, business.ErrTransactionNotFound) {
+			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
 		}
 
 		err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
@@ -233,44 +220,12 @@ func TestBusinessGetDetails(t *testing.T) {
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
 		if err != nil {
-			_, err = db.Exec("DELETE FROM transaction_log")
-			if err != nil {
-				log.Printf("Deleting transaction log: %s", err.Error())
-			}
-			_, err = db.Exec("DELETE FROM virtual_accounts")
-			if err != nil {
-				log.Printf("Deleting virtual accounts: %s", err.Error())
-			}
-			_, err = db.Exec("DELETE FROM virtual_account_entries")
-			if err != nil {
-				log.Printf("Deleting virtual account entries: %s", err.Error())
-			}
-			_, err = db.Exec("DELETE FROM emoney_entries")
-			if err != nil {
-				log.Printf("Deleting emoney entries: %s", err.Error())
-			}
 			t.Errorf("expecting not error when inserting transaction, instead got %s", err.Error())
 		}
 
 		_, err = paymentService.GetDetail(ctx, vaNumber)
 		if err != nil {
 			t.Errorf("unexpected error: %s", err.Error())
-		}
-		_, err = db.Exec("DELETE FROM transaction_log")
-		if err != nil {
-			log.Printf("Deleting transaction log: %s", err.Error())
-		}
-		_, err = db.Exec("DELETE FROM virtual_accounts")
-		if err != nil {
-			log.Printf("Deleting virtual accounts: %s", err.Error())
-		}
-		_, err = db.Exec("DELETE FROM virtual_account_entries")
-		if err != nil {
-			log.Printf("Deleting virtual account entries: %s", err.Error())
-		}
-		_, err = db.Exec("DELETE FROM emoney_entries")
-		if err != nil {
-			log.Printf("Deleting emoney entries: %s", err.Error())
 		}
 	})
 }
