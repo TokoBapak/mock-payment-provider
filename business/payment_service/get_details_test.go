@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 
 	db.SetMaxOpenConns(1)
 
-	setupCtx, setupCancel := context.WithTimeout(context.Background(), time.Minute*15)
+	setupCtx, setupCancel := context.WithTimeout(context.Background(), time.Minute*5)
 	defer setupCancel()
 
 	transactionRepository, err := transaction.NewTransactionRepository(db)
@@ -137,7 +137,7 @@ func parseConfig() config {
 
 func TestBusinessGetDetails(t *testing.T) {
 
-	ctx, setupCancel := context.WithTimeout(context.Background(), time.Minute*15)
+	ctx, setupCancel := context.WithTimeout(context.Background(), time.Minute*5)
 	defer setupCancel()
 	transactionRepository, err := transaction.NewTransactionRepository(db)
 	if err != nil {

@@ -16,7 +16,7 @@ import (
 )
 
 func TestMarkAsPaid(t *testing.T) {
-	ctx, setupCancel := context.WithTimeout(context.Background(), time.Minute*15)
+	ctx, setupCancel := context.WithTimeout(context.Background(), time.Minute*5)
 	defer setupCancel()
 
 	transactionRepository, err := transaction.NewTransactionRepository(db)
@@ -126,8 +126,11 @@ func TestMarkAsPaid(t *testing.T) {
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
 		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeVirtualAccountPermata)
-		if err != nil {
+		if err == nil {
 			t.Errorf("expecting error to be nil, but got %v", err)
+		}
+		if err.Error() != "acquiring virtual account entry from order id: not found" {
+			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
 		}
 	})
 }
