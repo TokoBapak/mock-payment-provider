@@ -115,4 +115,19 @@ func TestMarkAsPaid(t *testing.T) {
 			t.Errorf("expecting error to be nil, but got %v", err)
 		}
 	})
+
+	t.Run("MarkAsPaid should return err when use PaymentTypeVirtualAccountPermata", func(t *testing.T) {
+		orderId := "order-id-3"
+		err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
+			OrderID:     orderId,
+			Amount:      50000,
+			PaymentType: primitive.PaymentTypeVirtualAccountPermata,
+			Status:      primitive.TransactionStatusPending,
+			ExpiredAt:   time.Now().Add(time.Hour),
+		})
+		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeVirtualAccountPermata)
+		if err != nil {
+			t.Errorf("expecting error to be nil, but got %v", err)
+		}
+	})
 }
