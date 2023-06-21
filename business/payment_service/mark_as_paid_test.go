@@ -3,7 +3,6 @@ package payment_service_test
 import (
 	"context"
 	"errors"
-	"log"
 	"mock-payment-provider/business"
 	"mock-payment-provider/business/payment_service"
 	"mock-payment-provider/primitive"
@@ -75,7 +74,6 @@ func TestMarkAsPaid(t *testing.T) {
 			ExpiredAt:   time.Now().Add(-time.Minute),
 		})
 		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
-		log.Println(err)
 		if err == nil {
 			t.Errorf("expecting error to be not nil, but got nil")
 		}
