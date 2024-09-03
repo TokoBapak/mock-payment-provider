@@ -165,13 +165,13 @@ func TestBusinessGetDetails(t *testing.T) {
 		VirtualAccountRepository: virtualAccountRepository,
 	})
 	if err != nil {
-		t.Errorf("error: %s", err.Error())
+		t.Fatalf("creating payment service: %s", err.Error())
 	}
 
 	t.Run("GetDetails should return not found if the order id is empty", func(t *testing.T) {
 		_, err = paymentService.GetDetail(ctx, "")
 		if err == nil {
-			t.Errorf("expecting error to be not nil, but got nil")
+			t.Error("expecting error to be not nil, but got nil")
 		}
 		if err.Error() != "acquiring from virtual account store: virtualAccountNumber is empty" {
 			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
@@ -180,7 +180,7 @@ func TestBusinessGetDetails(t *testing.T) {
 	t.Run("GetDetails should return err 'not found' if the order id is not found", func(t *testing.T) {
 		_, err = paymentService.GetDetail(ctx, "not-exist")
 		if err == nil {
-			t.Errorf("expecting error to be not nil, but got nil")
+			t.Error("expecting error to be not nil, but got nil")
 		}
 		if !errors.Is(err, business.ErrTransactionNotFound) {
 			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
@@ -194,19 +194,26 @@ func TestBusinessGetDetails(t *testing.T) {
 		}
 
 		orderId := "order-id"
-		_, err = virtualAccountRepository.CreateCharge(ctx, vaNumber, orderId, 50000, time.Now().Add(time.Hour))
+		id, err := virtualAccountRepository.CreateCharge(ctx, vaNumber, orderId, 50000, time.Now().Add(time.Hour))
 		if err != nil {
 			t.Errorf("unexpected error: %s", err.Error())
 		}
+		if id == "" {
+			t.Error("expecting id to be not empty")
+		}
 
-		_, err = emoneyRepository.CreateCharge(ctx, orderId, 50000, time.Now().Add(time.Hour))
+
+		createCharge, err := emoneyRepository.CreateCharge(ctx, orderId, 50000, time.Now().Add(time.Hour))
 		if err != nil {
 			t.Errorf("unexpected error: %s", err.Error())
+		}
+		if createCharge == "" {
+			t.Error("expecting createCharge to be not empty")
 		}
 
 		_, err = paymentService.GetDetail(ctx, vaNumber)
 		if err == nil {
-			t.Errorf("expecting error to be not nil, but got nil")
+			t.Error("expecting error to be not nil, but got nil")
 		}
 		if !errors.Is(err, business.ErrTransactionNotFound) {
 			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
@@ -223,9 +230,24 @@ func TestBusinessGetDetails(t *testing.T) {
 			t.Errorf("expecting not error when inserting transaction, instead got %s", err.Error())
 		}
 
-		_, err = paymentService.GetDetail(ctx, vaNumber)
+		details, err := paymentService.GetDetail(ctx, vaNumber)
 		if err != nil {
 			t.Errorf("unexpected error: %s", err.Error())
+		}
+		if details.OrderId != orderId {
+			t.Errorf("expecting orderId to be %s, instead got %s", orderId, details.OrderId)
+		}
+		if details.ChargedAmount != 50000 {
+			t.Errorf("expecting charged amount to be 50000 instead got %d", details.ChargedAmount)
+		}
+		if details.Status != primitive.TransactionStatusPending {
+			t.Errorf("expecting status to be %s, instead got %s", primitive.TransactionStatusPending, details.Status)
+		}
+		if details.PaymentMethod != primitive.PaymentTypeEMoneyQRIS {
+			t.Errorf("expecting payment type to be %s, instead got %s", primitive.PaymentTypeEMoneyQRIS, details.PaymentMethod)
+		}
+		if details.VirtualAccountNumber != vaNumber {
+			t.Errorf("expecting virtual account number to be %s, instead got %s", vaNumber, details.VirtualAccountNumber)
 		}
 	})
 }

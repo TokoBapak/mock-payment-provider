@@ -3,6 +3,7 @@ package payment_service_test
 import (
 	"context"
 	"errors"
+	"log"
 	"mock-payment-provider/business"
 	"mock-payment-provider/business/payment_service"
 	"mock-payment-provider/primitive"
@@ -45,19 +46,23 @@ func TestMarkAsPaid(t *testing.T) {
 		VirtualAccountRepository: virtualAccountRepository,
 	})
 	if err != nil {
-		t.Errorf("error: %s", err.Error())
+		t.Fatalf("creating payment service: %s", err.Error())
 	}
 
 	t.Run("MarkAsPaid should return not found if the order id is empty", func(t *testing.T) {
 		err = paymentService.MarkAsPaid(ctx, "", primitive.PaymentTypeUnspecified)
 		if err == nil {
-			t.Errorf("expecting error to be not nil, but got nil")
+			t.Error("expecting error to be not nil, but got nil")
+		}
+		log.Printf("err: %s", err.Error())
+		if err.Error() != "acquiring transaction: empty order id" {
+			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
 		}
 	})
 	t.Run("MarkAsPaid should return err 'not found' if the order id is not found", func(t *testing.T) {
 		err = paymentService.MarkAsPaid(ctx, "not-exist", primitive.PaymentTypeUnspecified)
 		if err == nil {
-			t.Errorf("expecting error to be not nil, but got nil")
+			t.Error("expecting error to be not nil, but got nil")
 		}
 		if !errors.Is(err, business.ErrTransactionNotFound) {
 			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
@@ -73,9 +78,13 @@ func TestMarkAsPaid(t *testing.T) {
 			Status:      primitive.TransactionStatusExpired,
 			ExpiredAt:   time.Now().Add(-time.Minute),
 		})
+		if err != nil {
+			t.Errorf("unexpected error: %s", err.Error())
+		}
+
 		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
 		if err == nil {
-			t.Errorf("expecting error to be not nil, but got nil")
+			t.Error("expecting error to be not nil, but got nil")
 		}
 		if !errors.Is(err, business.ErrCannotModifyStatus) {
 			t.Errorf("expecting error %s, instead got %v", business.ErrCannotModifyStatus, err)
@@ -92,9 +101,13 @@ func TestMarkAsPaid(t *testing.T) {
 			Status:      primitive.TransactionStatusSettled,
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
+		if err != nil {
+			t.Errorf("unexpected error: %s", err.Error())
+		}
+
 		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
 		if err == nil {
-			t.Errorf("expecting error to be not nil, but got nil")
+			t.Error("expecting error to be not nil, but got nil")
 		}
 		if !errors.Is(err, business.ErrCannotModifyStatus) {
 			t.Errorf("expecting error %s, instead got %v", business.ErrCannotModifyStatus, err)
@@ -110,9 +123,13 @@ func TestMarkAsPaid(t *testing.T) {
 			Status:      primitive.TransactionStatusPending,
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
+		if err != nil {
+			t.Errorf("unexpected error: %s", err.Error())
+		}
+
 		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
 		if err != nil {
-			t.Errorf("expecting error to be nil, but got %v", err)
+			t.Errorf("unexpected error: %s", err.Error())
 		}
 	})
 
@@ -125,9 +142,13 @@ func TestMarkAsPaid(t *testing.T) {
 			Status:      primitive.TransactionStatusPending,
 			ExpiredAt:   time.Now().Add(time.Hour),
 		})
+		if err != nil {
+			t.Errorf("unexpected error: %s", err.Error())
+		}
+
 		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeVirtualAccountPermata)
 		if err == nil {
-			t.Errorf("expecting error to be nil, but got %v", err)
+			t.Error("expecting error to be not nil, but got nil")
 		}
 		if err.Error() != "acquiring virtual account entry from order id: not found" {
 			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
