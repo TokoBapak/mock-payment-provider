@@ -3,7 +3,6 @@ package payment_service_test
 import (
 	"context"
 	"errors"
-	"log"
 	"mock-payment-provider/business"
 	"mock-payment-provider/business/payment_service"
 	"mock-payment-provider/primitive"
@@ -50,108 +49,136 @@ func TestMarkAsPaid(t *testing.T) {
 	}
 
 	t.Run("MarkAsPaid should return not found if the order id is empty", func(t *testing.T) {
-		err = paymentService.MarkAsPaid(ctx, "", primitive.PaymentTypeUnspecified)
-		if err == nil {
-			t.Error("expecting error to be not nil, but got nil")
-		}
-		log.Printf("err: %s", err.Error())
-		if err.Error() != "acquiring transaction: empty order id" {
-			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
-		}
+		runTestMarkAsPaidShouldReturnNotFoundIfTheOrderIdIsEmpty(ctx, t, paymentService)
 	})
 	t.Run("MarkAsPaid should return err 'not found' if the order id is not found", func(t *testing.T) {
-		err = paymentService.MarkAsPaid(ctx, "not-exist", primitive.PaymentTypeUnspecified)
-		if err == nil {
-			t.Error("expecting error to be not nil, but got nil")
-		}
-		if !errors.Is(err, business.ErrTransactionNotFound) {
-			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
-		}
+		runTestMarkAsPaidShouldReturnErrorNotFoundIfTheOrderIdIsNotFound(ctx, t, paymentService)
 	})
 
 	t.Run("MarkAsPaid should return err 'cannot modify status' if the transaction is already expired", func(t *testing.T) {
-		orderId := "order-id-expired"
-		err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
-			OrderID:     orderId,
-			Amount:      50000,
-			PaymentType: primitive.PaymentTypeEMoneyQRIS,
-			Status:      primitive.TransactionStatusExpired,
-			ExpiredAt:   time.Now().Add(-time.Minute),
-		})
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
-
-		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
-		if err == nil {
-			t.Error("expecting error to be not nil, but got nil")
-		}
-		if !errors.Is(err, business.ErrCannotModifyStatus) {
-			t.Errorf("expecting error %s, instead got %v", business.ErrCannotModifyStatus, err)
-		}
-
+		runTestMarkAsPaidShouldReturnCannotModifyStatusIfTheTransactionIsAlreadyExpired(ctx, t, transactionRepository, paymentService)
 	})
 
 	t.Run("MarkAsPaid should return err 'cannot modify status' if the previous status is not pending", func(t *testing.T) {
-		orderId := "order-id-2"
-		err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
-			OrderID:     orderId,
-			Amount:      50000,
-			PaymentType: primitive.PaymentTypeEMoneyQRIS,
-			Status:      primitive.TransactionStatusSettled,
-			ExpiredAt:   time.Now().Add(time.Hour),
-		})
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
-
-		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
-		if err == nil {
-			t.Error("expecting error to be not nil, but got nil")
-		}
-		if !errors.Is(err, business.ErrCannotModifyStatus) {
-			t.Errorf("expecting error %s, instead got %v", business.ErrCannotModifyStatus, err)
-		}
+		runTestMarkAsPaidShouldReturnErrorCannotModifyStatusIfThePreviousStatusIsNotPending(ctx, t, transactionRepository, paymentService)
 	})
 
 	t.Run("MarkAsPaid should return err if the payment method is not supported", func(t *testing.T) {
-		orderId := "order-id-not-supported"
-		err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
-			OrderID:     orderId,
-			Amount:      50000,
-			PaymentType: primitive.PaymentTypeEMoneyQRIS,
-			Status:      primitive.TransactionStatusPending,
-			ExpiredAt:   time.Now().Add(time.Hour),
-		})
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
-
-		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
+		runTestMarkAsPaidShouldReturnErrorIfThePaymentMethodIsNotSupported(ctx, t, transactionRepository, paymentService)
 	})
 
 	t.Run("MarkAsPaid should return err when use PaymentTypeVirtualAccountPermata", func(t *testing.T) {
-		orderId := "order-id-3"
-		err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
-			OrderID:     orderId,
-			Amount:      50000,
-			PaymentType: primitive.PaymentTypeVirtualAccountPermata,
-			Status:      primitive.TransactionStatusPending,
-			ExpiredAt:   time.Now().Add(time.Hour),
-		})
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
-
-		err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeVirtualAccountPermata)
-		if err == nil {
-			t.Error("expecting error to be not nil, but got nil")
-		}
-		if err.Error() != "acquiring virtual account entry from order id: not found" {
-			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
-		}
+		runTestMarkAsPaidShouldReturnErrorWhenUsePaymentTypeVirtualAccountPermata(ctx, t, transactionRepository, paymentService)
 	})
+}
+
+// MarkAsPaid should return not found if the order id is empty
+func runTestMarkAsPaidShouldReturnNotFoundIfTheOrderIdIsEmpty(ctx context.Context, t *testing.T, paymentService *payment_service.Dependency) {
+	err := paymentService.MarkAsPaid(ctx, "", primitive.PaymentTypeUnspecified)
+	if err == nil {
+		t.Error("expecting error to be not nil, but got nil")
+	}
+	if err.Error() != "acquiring transaction: empty order id" {
+		t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
+	}
+}
+
+// MarkAsPaid should return err 'not found' if the order id is not found
+func runTestMarkAsPaidShouldReturnErrorNotFoundIfTheOrderIdIsNotFound(ctx context.Context, t *testing.T, paymentService *payment_service.Dependency) {
+	err := paymentService.MarkAsPaid(ctx, "not-exist", primitive.PaymentTypeUnspecified)
+	if err == nil {
+		t.Error("expecting error to be not nil, but got nil")
+	}
+	if !errors.Is(err, business.ErrTransactionNotFound) {
+		t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
+	}
+}
+
+// MarkAsPaid should return err 'cannot modify status' if the transaction is already expired
+func runTestMarkAsPaidShouldReturnCannotModifyStatusIfTheTransactionIsAlreadyExpired(ctx context.Context, t *testing.T, transactionRepository *transaction.Repository, paymentService *payment_service.Dependency) {
+	orderId := "order-id-expired"
+	err := transactionRepository.Create(ctx, repository.CreateTransactionParam{
+		OrderID:     orderId,
+		Amount:      50000,
+		PaymentType: primitive.PaymentTypeEMoneyQRIS,
+		Status:      primitive.TransactionStatusExpired,
+		ExpiredAt:   time.Now().Add(-time.Minute),
+	})
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+
+	err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
+	if err == nil {
+		t.Error("expecting error to be not nil, but got nil")
+	}
+	if !errors.Is(err, business.ErrCannotModifyStatus) {
+		t.Errorf("expecting error %s, instead got %v", business.ErrCannotModifyStatus, err)
+	}
+}
+
+// MarkAsPaid should return err 'cannot modify status' if the previous status is not pending
+func runTestMarkAsPaidShouldReturnErrorCannotModifyStatusIfThePreviousStatusIsNotPending(ctx context.Context, t *testing.T, transactionRepository *transaction.Repository, paymentService *payment_service.Dependency) {
+	orderId := "order-id-2"
+	err := transactionRepository.Create(ctx, repository.CreateTransactionParam{
+		OrderID:     orderId,
+		Amount:      50000,
+		PaymentType: primitive.PaymentTypeEMoneyQRIS,
+		Status:      primitive.TransactionStatusSettled,
+		ExpiredAt:   time.Now().Add(time.Hour),
+	})
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+
+	err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
+	if err == nil {
+		t.Error("expecting error to be not nil, but got nil")
+	}
+	if !errors.Is(err, business.ErrCannotModifyStatus) {
+		t.Errorf("expecting error %s, instead got %v", business.ErrCannotModifyStatus, err)
+	}
+}
+
+// MarkAsPaid should return err if the payment method is not supported
+func runTestMarkAsPaidShouldReturnErrorIfThePaymentMethodIsNotSupported(ctx context.Context, t *testing.T, transactionRepository *transaction.Repository, paymentService *payment_service.Dependency) {
+	orderId := "order-id-not-supported"
+	err := transactionRepository.Create(ctx, repository.CreateTransactionParam{
+		OrderID:     orderId,
+		Amount:      50000,
+		PaymentType: primitive.PaymentTypeEMoneyQRIS,
+		Status:      primitive.TransactionStatusPending,
+		ExpiredAt:   time.Now().Add(time.Hour),
+	})
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+
+	err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeEMoneyQRIS)
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+}
+
+// MarkAsPaid should return err when use PaymentTypeVirtualAccountPermata
+func runTestMarkAsPaidShouldReturnErrorWhenUsePaymentTypeVirtualAccountPermata(ctx context.Context, t *testing.T, transactionRepository *transaction.Repository, paymentService *payment_service.Dependency) {
+	orderId := "order-id-3"
+	err := transactionRepository.Create(ctx, repository.CreateTransactionParam{
+		OrderID:     orderId,
+		Amount:      50000,
+		PaymentType: primitive.PaymentTypeVirtualAccountPermata,
+		Status:      primitive.TransactionStatusPending,
+		ExpiredAt:   time.Now().Add(time.Hour),
+	})
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+
+	err = paymentService.MarkAsPaid(ctx, orderId, primitive.PaymentTypeVirtualAccountPermata)
+	if err == nil {
+		t.Error("expecting error to be not nil, but got nil")
+	}
+	if err.Error() != "acquiring virtual account entry from order id: not found" {
+		t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
+	}
 }
