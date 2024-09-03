@@ -169,85 +169,100 @@ func TestBusinessGetDetails(t *testing.T) {
 	}
 
 	t.Run("GetDetails should return not found if the order id is empty", func(t *testing.T) {
-		_, err = paymentService.GetDetail(ctx, "")
-		if err == nil {
-			t.Error("expecting error to be not nil, but got nil")
-		}
-		if err.Error() != "acquiring from virtual account store: virtualAccountNumber is empty" {
-			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
-		}
+		runGetDetailsShouldReturnNotFoundIfTheOrderIdIsEmpty(ctx, t, paymentService)
 	})
 	t.Run("GetDetails should return err 'not found' if the order id is not found", func(t *testing.T) {
-		_, err = paymentService.GetDetail(ctx, "not-exist")
-		if err == nil {
-			t.Error("expecting error to be not nil, but got nil")
-		}
-		if !errors.Is(err, business.ErrTransactionNotFound) {
-			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
-		}
+		runGetDetailsShouldReturnErrorNotFoundIfTheOrderIdIsNotFound(ctx, t, paymentService)
 	})
 
 	t.Run("GetDetails should return the correct details", func(t *testing.T) {
-		vaNumber, err := virtualAccountRepository.CreateOrGetVirtualAccountNumber(ctx, "annedoe@example.com")
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
-
-		orderId := "order-id"
-		id, err := virtualAccountRepository.CreateCharge(ctx, vaNumber, orderId, 50000, time.Now().Add(time.Hour))
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
-		if id == "" {
-			t.Error("expecting id to be not empty")
-		}
-
-
-		createCharge, err := emoneyRepository.CreateCharge(ctx, orderId, 50000, time.Now().Add(time.Hour))
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
-		if createCharge == "" {
-			t.Error("expecting createCharge to be not empty")
-		}
-
-		_, err = paymentService.GetDetail(ctx, vaNumber)
-		if err == nil {
-			t.Error("expecting error to be not nil, but got nil")
-		}
-		if !errors.Is(err, business.ErrTransactionNotFound) {
-			t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
-		}
-
-		err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
-			OrderID:     orderId,
-			Amount:      50000,
-			PaymentType: primitive.PaymentTypeEMoneyQRIS,
-			Status:      primitive.TransactionStatusPending,
-			ExpiredAt:   time.Now().Add(time.Hour),
-		})
-		if err != nil {
-			t.Errorf("expecting not error when inserting transaction, instead got %s", err.Error())
-		}
-
-		details, err := paymentService.GetDetail(ctx, vaNumber)
-		if err != nil {
-			t.Errorf("unexpected error: %s", err.Error())
-		}
-		if details.OrderId != orderId {
-			t.Errorf("expecting orderId to be %s, instead got %s", orderId, details.OrderId)
-		}
-		if details.ChargedAmount != 50000 {
-			t.Errorf("expecting charged amount to be 50000 instead got %d", details.ChargedAmount)
-		}
-		if details.Status != primitive.TransactionStatusPending {
-			t.Errorf("expecting status to be %s, instead got %s", primitive.TransactionStatusPending, details.Status)
-		}
-		if details.PaymentMethod != primitive.PaymentTypeEMoneyQRIS {
-			t.Errorf("expecting payment type to be %s, instead got %s", primitive.PaymentTypeEMoneyQRIS, details.PaymentMethod)
-		}
-		if details.VirtualAccountNumber != vaNumber {
-			t.Errorf("expecting virtual account number to be %s, instead got %s", vaNumber, details.VirtualAccountNumber)
-		}
+		runGetDetailsShouldReturnTheCorrectDetails(ctx, t, virtualAccountRepository, emoneyRepository, paymentService, transactionRepository)
 	})
+
+}
+
+// GetDetails should return not found if the order id is empty
+func runGetDetailsShouldReturnNotFoundIfTheOrderIdIsEmpty(ctx context.Context, t *testing.T, paymentService *payment_service.Dependency) {
+	_, err := paymentService.GetDetail(ctx, "")
+	if err == nil {
+		t.Error("expecting error to be not nil, but got nil")
+	}
+	if err.Error() != "acquiring from virtual account store: virtualAccountNumber is empty" {
+		t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
+	}
+}
+
+// GetDetails should return err 'not found' if the order id is not found
+func runGetDetailsShouldReturnErrorNotFoundIfTheOrderIdIsNotFound(ctx context.Context, t *testing.T, paymentService *payment_service.Dependency) {
+	_, err := paymentService.GetDetail(ctx, "not-exist")
+	if err == nil {
+		t.Error("expecting error to be not nil, but got nil")
+	}
+	if !errors.Is(err, business.ErrTransactionNotFound) {
+		t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
+	}
+}
+
+// GetDetails should return the correct details]
+func runGetDetailsShouldReturnTheCorrectDetails(ctx context.Context, t *testing.T, virtualAccountRepository *virtual_account.Repository, emoneyRepository *emoney.Repository, paymentService *payment_service.Dependency, transactionRepository *transaction.Repository) {
+	vaNumber, err := virtualAccountRepository.CreateOrGetVirtualAccountNumber(ctx, "annedoe@example.com")
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+
+	orderId := "order-id"
+	id, err := virtualAccountRepository.CreateCharge(ctx, vaNumber, orderId, 50000, time.Now().Add(time.Hour))
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+	if id == "" {
+		t.Error("expecting id to be not empty")
+	}
+
+	createCharge, err := emoneyRepository.CreateCharge(ctx, orderId, 50000, time.Now().Add(time.Hour))
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+	if createCharge == "" {
+		t.Error("expecting createCharge to be not empty")
+	}
+
+	_, err = paymentService.GetDetail(ctx, vaNumber)
+	if err == nil {
+		t.Error("expecting error to be not nil, but got nil")
+	}
+	if !errors.Is(err, business.ErrTransactionNotFound) {
+		t.Errorf("expecting error %s, instead got %v", business.ErrTransactionNotFound, err)
+	}
+
+	err = transactionRepository.Create(ctx, repository.CreateTransactionParam{
+		OrderID:     orderId,
+		Amount:      50000,
+		PaymentType: primitive.PaymentTypeEMoneyQRIS,
+		Status:      primitive.TransactionStatusPending,
+		ExpiredAt:   time.Now().Add(time.Hour),
+	})
+	if err != nil {
+		t.Errorf("expecting not error when inserting transaction, instead got %s", err.Error())
+	}
+
+	details, err := paymentService.GetDetail(ctx, vaNumber)
+	if err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+	if details.OrderId != orderId {
+		t.Errorf("expecting orderId to be %s, instead got %s", orderId, details.OrderId)
+	}
+	if details.ChargedAmount != 50000 {
+		t.Errorf("expecting charged amount to be 50000 instead got %d", details.ChargedAmount)
+	}
+	if details.Status != primitive.TransactionStatusPending {
+		t.Errorf("expecting status to be %s, instead got %s", primitive.TransactionStatusPending, details.Status)
+	}
+	if details.PaymentMethod != primitive.PaymentTypeEMoneyQRIS {
+		t.Errorf("expecting payment type to be %s, instead got %s", primitive.PaymentTypeEMoneyQRIS, details.PaymentMethod)
+	}
+	if details.VirtualAccountNumber != vaNumber {
+		t.Errorf("expecting virtual account number to be %s, instead got %s", vaNumber, details.VirtualAccountNumber)
+	}
 }
